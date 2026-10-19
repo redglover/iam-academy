@@ -44,11 +44,13 @@ Paste the client ID (and tenant ID) into the playground. No client secret is nee
 ## Run locally
 
 ```bash
-npm install
+npm ci            # installs the exact versions from package-lock.json
 npm run dev       # http://localhost:5173
 npm test          # engine unit tests (Vitest)
 npm run build     # typecheck + production build
 ```
+
+Dependencies are pinned to exact versions (Tailwind CSS 3, Vite 5). Don't run `npm update` or `npm install <pkg>@latest`: Tailwind 4 and newer Vite versions need a different setup.
 
 ## Stack
 
