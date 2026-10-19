@@ -43,6 +43,11 @@ const SHEET: { title: string; tone: string; items: string[] }[] = [
     items: ['All applicable policies combine, no ordering', 'Exclusions beat inclusions, block wins', 'Every grant from every policy must be met', 'Baseline: MFA all, block legacy, phishing-resistant admins', 'Exclude and monitor 2 break-glass accounts', 'Report-only → What If → pilot → on'],
   },
   {
+    title: 'PIM',
+    tone: 'border-leave',
+    items: ['Eligible = no rights until activated', 'Tier 0: 1–4 h, phishing-resistant MFA, ticket, approval', 'Requesters never approve themselves', 'Only break-glass is permanent Global Admin', 'PIM for Groups for Azure/app privileges', 'Quarterly access reviews of privileged roles'],
+  },
+  {
     title: 'Principles',
     tone: 'border-key',
     items: ['Least privilege and need-to-know', 'Separation of duties', 'Zero trust: verify every request', 'Every account and group has an owner', 'No standing admin rights (PIM)'],

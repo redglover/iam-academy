@@ -38,6 +38,14 @@ export const INTERVIEW: { q: string; a: string }[] = [
     a: 'Find the sign-in in the Entra sign-in logs and open the Conditional Access tab: it shows every policy, whether it applied, and which grant control failed. The error code helps (53003 blocked, 53000 device not compliant, 50076 MFA). Then reproduce with the What If tool using the same user, app, platform, location and client. Usual causes: legacy client, unmanaged device, unexpected location, or the user being in a scope they shouldn’t be.',
   },
   {
+    q: 'How would you roll out PIM in a tenant with ten permanent Global Admins?',
+    a: 'Inventory every privileged assignment first. Keep two break-glass accounts permanently active. Remove leavers and service accounts (give workloads managed identities or scoped roles), and convert the rest to time-bound eligible assignments, preferably through groups. Configure tier-0 role settings: short activation (1–4 h), phishing-resistant MFA via an authentication context, justification, ticket and approval. Then enable PIM alerts, notify the security team on activation, and schedule quarterly access reviews.',
+  },
+  {
+    q: 'An admin activated a role but still gets access denied. What do you check?',
+    a: 'Whether the activation actually completed (pending approval?), whether the token was issued before activation (sign out and in, or wait a few minutes), whether it’s the right role and scope for the task, and whether Conditional Access or an authentication context blocked the step-up. The PIM audit history and sign-in logs show each step.',
+  },
+  {
     q: 'Walk me through what happens when someone leaves the company.',
     a: 'HR sets the end date → IGA or Lifecycle Workflows trigger at the end date (immediately for hostile terminations) → disable the account → revoke sessions → remove groups and roles, which SCIM-deprovisions apps → convert the mailbox to shared and delegate to the manager → remove licences → notify the manager about hardware → log everything → delete after the retention period.',
   },

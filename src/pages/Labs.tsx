@@ -9,6 +9,7 @@ const LABS: { id: LabId; title: string; text: string }[] = [
   { id: 'saml-inspector', title: 'SAML inspector', text: 'Paste a SAMLResponse or SAMLRequest and see it decoded: NameID, attributes, audience, validity window, signature and certificate thumbprint.' },
   { id: 'scim', title: 'SCIM lab', text: 'Run Entra-style provisioning cycles against a SCIM server in your browser. Make JML changes and watch the requests, or send your own in the console.' },
   { id: 'ca', title: 'Conditional Access lab', text: 'Run sign-ins through Fjordtech’s policy set in a What If tool, then build your own policies in six missions checked by test sign-ins.' },
+  { id: 'pim', title: 'PIM lab', text: 'Activate a privileged role with justification, ticket, phishing-resistant MFA and approval, watch it expire, then clean up a tenant full of standing admins.' },
   { id: 'rbac', title: 'RBAC lab', text: 'Fix messy business roles, remove SoD conflicts, and watch privilege creep build up over a career.' },
   { id: 'review', title: 'Access review game', text: 'Sixty seconds, twelve access lines. Catch the risky ones without breaking anyone’s work.' },
 ]

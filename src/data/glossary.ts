@@ -5,6 +5,13 @@ export interface Term {
 }
 
 export const GLOSSARY: Term[] = [
+  { term: 'Eligible assignment', def: 'A PIM assignment that lets someone activate a role when needed. No rights until activated.', module: 'pim' },
+  { term: 'Active assignment', def: 'A role assignment with rights right now, either permanent or created by a time-limited activation.', module: 'pim' },
+  { term: 'Activation', def: 'Turning an eligible PIM assignment into a temporary active one, subject to MFA, justification, ticket and approval rules.', module: 'pim' },
+  { term: 'Authentication context', def: 'A Conditional Access label (e.g. “phishing-resistant MFA”) that apps and PIM can demand for sensitive actions.', module: 'pim' },
+  { term: 'PIM for Groups', def: 'Just-in-time membership or ownership of a group, used for privileges that aren’t Entra roles, like Azure Owner.', module: 'pim' },
+  { term: 'Role-assignable group', def: 'An Entra group that can hold directory roles. Only privileged admins can manage its membership.', module: 'pim' },
+  { term: 'Tier 0', def: 'The most powerful identities and systems: Global Admin, Privileged Role Admin, identity infrastructure. Compromise means full control.', module: 'pim' },
   { term: 'Named location', def: 'IP ranges or countries defined in Entra ID and used as a Conditional Access condition, e.g. the office as a trusted location.', module: 'ca' },
   { term: 'Authentication strength', def: 'A Conditional Access grant control that requires specific methods, e.g. phishing-resistant MFA (FIDO2, passkeys, Windows Hello).', module: 'ca' },
   { term: 'Report-only', def: 'Conditional Access policy state that evaluates and logs the result of every sign-in without enforcing it.', module: 'ca' },

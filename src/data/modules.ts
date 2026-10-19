@@ -1269,6 +1269,12 @@ Get-MgDirectoryRoleMember -DirectoryRoleId $ga.Id |
         title: 'Don’t forget non-human identities',
         text: 'Service accounts, app registrations, managed identities and API keys often outnumber humans 10:1 and have more privileges. They need owners, expiry, credential rotation and reviews too. This is the fastest-growing area of IAM.',
       },
+      {
+        t: 'callout',
+        kind: 'tip',
+        title: 'Go deeper',
+        text: 'The next module, [PIM in practice](#/learn/pim), shows activation, approval, role settings and how to clean up standing admin access, with a hands-on lab.',
+      },
     ],
     quiz: [
       {
@@ -1282,6 +1288,166 @@ Get-MgDirectoryRoleMember -DirectoryRoleId $ga.Id |
         options: ['Used daily by the IT manager', 'Synced from on-prem AD', 'Cloud-only, excluded from Conditional Access, monitored, rarely used', 'Deleted'],
         answer: 2,
         explain: 'They exist for when everything else is broken, including federation and Conditional Access. Every sign-in should alert.',
+      },
+    ],
+  },
+  {
+    slug: 'pim',
+    title: 'PIM in practice',
+    tagline: 'Just-in-time admin rights with Entra Privileged Identity Management: set it up, use it, and clean up standing access.',
+    minutes: 18,
+    tone: 'leave',
+    blocks: [
+      {
+        t: 'p',
+        text: 'Most serious breaches end with an attacker using an admin account. **Privileged Identity Management (PIM)** shrinks that target: instead of being Global Administrator around the clock, Erik is *eligible* for it, and *activates* it for two hours when he needs it, with phishing-resistant MFA, a reason, a ticket and someone’s approval. The rest of the time his account is an ordinary user account, and so is whatever an attacker steals.',
+      },
+      { t: 'h', text: 'The vocabulary' },
+      {
+        t: 'table',
+        head: ['Term', 'Meaning'],
+        rows: [
+          ['Eligible', 'May activate the role when needed. Has no rights until then.'],
+          ['Active', 'Has the role’s rights right now, either after activation or by direct assignment.'],
+          ['Permanent vs time-bound', 'Whether the eligible or active assignment itself has an end date.'],
+          ['Activation', 'Turning an eligible assignment into a temporary active one, subject to the role settings.'],
+          ['Role settings', 'Per-role rules: max duration, MFA or authentication context, justification, ticket, approval, notifications.'],
+          ['Approver', 'Person or group who must approve activations for a role. Never the requester.'],
+          ['PIM for Groups', 'Just-in-time *membership* (or ownership) of a group, which in turn grants Azure, app or Exchange roles.'],
+          ['Azure resource roles', 'The same model for Azure RBAC: Owner or Contributor on a subscription, eligible and activated.'],
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'field',
+        title: 'Licensing',
+        text: 'PIM needs **Entra ID P2** (or Entra ID Governance) for the users who are eligible, approve or are reviewed. Microsoft 365 E5 includes it.',
+      },
+      { t: 'h', text: 'What an activation looks like' },
+      {
+        t: 'timeline',
+        items: [
+          { when: '1. Request', what: 'Erik opens **My roles** in the Entra admin center (or the PIM API), picks Global Administrator, chooses 2 hours.', tone: 'key' },
+          { when: '2. Step up', what: 'PIM requires MFA, ideally a Conditional Access **authentication context** that demands phishing-resistant MFA. Erik touches his FIDO2 key.', tone: 'leave' },
+          { when: '3. Explain', what: 'Justification “Update the guest CA policy” and ticket CHG-1042, so the audit log says *why*.', tone: 'key' },
+          { when: '4. Approve', what: 'For tier-0 roles, Marte gets an email and approves or denies. Erik can’t approve himself.', tone: 'move' },
+          { when: '5. Work', what: 'The role is active. It can take a few minutes to take effect; signing out and in refreshes the token.', tone: 'join' },
+          { when: '6. Expire', what: 'After 2 hours the role is removed automatically, or earlier if Erik clicks Deactivate. Every step is in the PIM audit history.', tone: 'auto' },
+        ],
+      },
+      { t: 'h', text: 'Try it: activate, approve, expire, then clean up' },
+      {
+        t: 'p',
+        text: 'Be Erik and activate Global Administrator, approve it as Marte, and fast-forward the clock until it expires. Then try Nora and the tier-0 Azure group. Finally, clean up Fjordtech’s standing access and fix the Global Administrator role settings until there are no findings left.',
+      },
+      { t: 'lab', lab: 'pim' },
+      { t: 'h', text: 'Recommended role settings' },
+      {
+        t: 'table',
+        head: ['Setting', 'Tier 0 (Global Admin, Privileged Role Admin, prod Owner groups)', 'Tier 1 (User Admin, Helpdesk, Exchange Admin)', 'Tier 2 (readers)'],
+        rows: [
+          ['Assignment', 'Eligible only, time-bound (e.g. 6 months)', 'Eligible, time-bound (e.g. 12 months)', 'Active is fine'],
+          ['Max activation', '1–4 h', '4–8 h', 'n/a'],
+          ['On activation', 'Auth context: phishing-resistant MFA', 'MFA', 'n/a'],
+          ['Justification / ticket', 'Both', 'Justification', 'n/a'],
+          ['Approval', 'Yes, by a small group (not the requester’s team only)', 'Usually no', 'No'],
+          ['Notifications', 'Alert the security team on every activation', 'Digest', 'None'],
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'warn',
+        title: 'Break-glass stays permanent',
+        text: 'The two emergency access accounts are the one deliberate exception: **permanently active** Global Administrators, excluded from Conditional Access, with alerts on every sign-in. PIM, MFA and Conditional Access are exactly what might be broken when you need them.',
+      },
+      { t: 'h', text: 'PIM for Groups' },
+      {
+        t: 'p',
+        text: 'Many privileges aren’t Entra roles: Owner on the production subscription, admin in an app, an Exchange role group. Put them on a group (a **role-assignable group** if it holds Entra roles), make people *eligible members*, and they activate membership the same way. One mechanism for everything privileged, with the same approval, MFA and audit trail.',
+      },
+      { t: 'h', text: 'Running PIM day to day' },
+      {
+        t: 'list',
+        items: [
+          '**PIM alerts** flag drift: too many Global Admins, roles assigned outside PIM, eligible roles nobody has activated in months, activations without MFA.',
+          '**Access reviews** of privileged roles every quarter: reviewers confirm each eligible and active assignment, and denied ones are removed automatically.',
+          '**Assign through groups** tied to job roles, so movers lose eligibility automatically when they leave the group, and leavers lose everything when the account is disabled and groups are stripped.',
+          '**Report standing access** regularly and treat every permanent active tier-0 assignment, except break-glass, as a finding.',
+          '**Service accounts** don’t belong in PIM roles: they can’t do MFA. Use managed identities or workload identities with narrowly scoped permissions.',
+        ],
+      },
+      {
+        t: 'code',
+        lang: 'powershell',
+        title: 'PIM with Microsoft Graph PowerShell',
+        code: `Connect-MgGraph -Scopes 'RoleManagement.ReadWrite.Directory'
+$ga   = Get-MgRoleManagementDirectoryRoleDefinition -Filter "displayName eq 'Global Administrator'"
+$erik = Get-MgUser -UserId 'erik.dahl@fjordtech.no'
+
+# Who is permanently active in Global Administrator? (should be break-glass only)
+Get-MgRoleManagementDirectoryRoleAssignmentSchedule -Filter "roleDefinitionId eq '$($ga.Id)'" -ExpandProperty Principal |
+  Where-Object { $_.ScheduleInfo.Expiration.Type -eq 'noExpiration' } |
+  Select-Object @{ n = 'Principal'; e = { $_.Principal.AdditionalProperties.displayName } }, AssignmentType
+
+# Make Erik eligible for 180 days
+New-MgRoleManagementDirectoryRoleEligibilityScheduleRequest -BodyParameter @{
+  action = 'adminAssign'; principalId = $erik.Id; roleDefinitionId = $ga.Id; directoryScopeId = '/'
+  justification = 'IAM engineer, CHG-1001'
+  scheduleInfo = @{ startDateTime = (Get-Date); expiration = @{ type = 'afterDuration'; duration = 'P180D' } }
+}
+
+# Erik activates for 2 hours (run as Erik)
+New-MgRoleManagementDirectoryRoleAssignmentScheduleRequest -BodyParameter @{
+  action = 'selfActivate'; principalId = $erik.Id; roleDefinitionId = $ga.Id; directoryScopeId = '/'
+  justification = 'Update guest CA policy'; ticketInfo = @{ ticketNumber = 'CHG-1042'; ticketSystem = 'ServiceNow' }
+  scheduleInfo = @{ startDateTime = (Get-Date); expiration = @{ type = 'afterDuration'; duration = 'PT2H' } }
+}`,
+        notes: ['Durations use ISO 8601: `PT2H` is 2 hours, `P180D` is 180 days.', 'Eligibility, activation and role settings (`roleManagementPolicies`) are all in the Graph API, so they can be scripted, reviewed and backed up like Conditional Access policies.'],
+      },
+      { t: 'h', text: 'Troubleshooting cheat sheet' },
+      {
+        t: 'table',
+        head: ['Symptom', 'Likely cause', 'Fix'],
+        rows: [
+          ['Activated, but still “access denied”', 'The token predates the activation', 'Wait a few minutes, or sign out and in again'],
+          ['Request stuck as pending', 'Approval required, approvers haven’t acted', 'Check who the approvers are; have a backup approver group'],
+          ['“Authentication context required” on activation', 'Role demands phishing-resistant MFA', 'Sign in with a FIDO2 key, passkey or Windows Hello'],
+          ['Role missing from My roles', 'Eligibility expired, or assigned to a group you left', 'Ask for renewal; check the eligible assignment’s end date'],
+          ['Duration options too short', 'Max activation set in role settings', 'Activate again, or ask whether the setting fits the task'],
+          ['Many permanent Global Admins', 'Assignments made outside PIM or before PIM existed', 'Convert to eligible, keep only break-glass permanent'],
+        ],
+      },
+    ],
+    quiz: [
+      {
+        q: 'Erik is *eligible* for Global Administrator. What can he do right now?',
+        options: ['Everything a Global Admin can', 'Nothing extra until he activates the role', 'Read-only admin tasks', 'Approve other activations'],
+        answer: 1,
+        explain: 'Eligible means no rights until activation. That’s the point: a stolen eligible account isn’t an admin account.',
+      },
+      {
+        q: 'Erik requests Global Administrator and is also listed as an approver. Can he approve his own request?',
+        options: ['Yes, approvers can approve anything', 'No, requesters can never approve their own activation', 'Only outside business hours', 'Only for less than an hour'],
+        answer: 1,
+        explain: 'Approval is a second pair of eyes. PIM never lets a requester approve themselves.',
+      },
+      {
+        q: 'Which accounts should stay permanently active Global Administrators?',
+        options: ['The IT manager', 'All IAM engineers', 'Two monitored break-glass accounts', 'Service accounts used by scripts'],
+        answer: 2,
+        explain: 'Break-glass accounts must work when PIM, MFA or Conditional Access are broken. Everyone else should be eligible.',
+      },
+      {
+        q: 'How do you require phishing-resistant MFA specifically when someone activates Global Administrator?',
+        options: ['Require MFA in the role settings', 'Link the role setting to a Conditional Access authentication context that requires phishing-resistant authentication strength', 'Block legacy auth', 'Shorten the activation to 1 hour'],
+        answer: 1,
+        explain: 'Authentication contexts let PIM ask Conditional Access for a stronger check at activation time.',
+      },
+      {
+        q: 'Azure subscription Owner isn’t an Entra role. How do you make it just-in-time?',
+        options: ['You can’t', 'PIM for Groups: make the group that holds Owner a PIM group with eligible members (or use PIM for Azure resources)', 'Give everyone Owner and review yearly', 'Use a shared admin account'],
+        answer: 1,
+        explain: 'PIM for Groups (or PIM for Azure resource roles) brings the same activation, approval and audit to non-Entra privileges.',
       },
     ],
   },

@@ -16,6 +16,8 @@ export const BADGES = {
   'scim-console': { name: 'API whisperer', emoji: '📡', how: 'Send a successful request in the SCIM console' },
   'ca-detective': { name: 'What If detective', emoji: '🕵️', how: 'Try 5 different sign-ins in the Conditional Access What If tool' },
   'ca-architect': { name: 'Policy architect', emoji: '🏛️', how: 'Complete every Conditional Access mission' },
+  'pim-activator': { name: 'Just in time', emoji: '⏱️', how: 'See an approved PIM activation through to automatic expiry' },
+  'pim-cleaner': { name: 'Zero standing privilege', emoji: '🧹', how: 'Clear every high finding in the PIM clean-up' },
   'review-ace': { name: 'Eagle-eyed reviewer', emoji: '🦅', how: 'Catch every risky line in the access review' },
   graduate: { name: 'IAM graduate', emoji: '🏅', how: 'Complete every module' },
 } as const
