@@ -5,6 +5,15 @@ export interface Term {
 }
 
 export const GLOSSARY: Term[] = [
+  { term: 'SAML', def: 'Security Assertion Markup Language 2.0. XML-based standard for web single sign-on between an identity provider and a service provider.', module: 'saml' },
+  { term: 'Assertion', def: 'The signed XML statement a SAML IdP issues about a user: who, for which app, valid when, with which attributes.', module: 'saml' },
+  { term: 'Identity provider (IdP)', def: 'The system that authenticates users and issues assertions or tokens, e.g. Entra ID.', module: 'saml' },
+  { term: 'Service provider (SP)', def: 'In SAML, the application that trusts the IdP and consumes its assertions.', module: 'saml' },
+  { term: 'Entity ID', def: 'Unique identifier of a SAML IdP or SP, usually a URL. “Identifier” in Entra.', module: 'saml' },
+  { term: 'ACS URL', def: 'Assertion Consumer Service: the SP endpoint that receives SAML responses. “Reply URL” in Entra.', module: 'saml' },
+  { term: 'NameID', def: 'The user identifier inside a SAML assertion that the SP matches against its users.', module: 'saml' },
+  { term: 'Federation metadata', def: 'XML document describing a SAML party: entity ID, endpoints and signing certificates.', module: 'saml' },
+  { term: 'JIT provisioning', def: 'Just-in-time: the app creates a user account on first SSO sign-in. Never removes it.', module: 'saml' },
   { term: 'OAuth 2.0', def: 'Framework for delegated authorization: an app gets an access token to call an API on a user’s or its own behalf.', module: 'oauth' },
   { term: 'OpenID Connect (OIDC)', def: 'Identity layer on top of OAuth 2.0. Adds the ID token so apps learn who signed in.', module: 'oauth' },
   { term: 'PKCE', def: 'Proof Key for Code Exchange. The app proves it is the one that started the flow, so a stolen authorization code is useless.', module: 'oauth' },

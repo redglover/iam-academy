@@ -5,6 +5,8 @@ const LABS: { id: LabId; title: string; text: string }[] = [
   { id: 'jml', title: 'JML simulator', text: 'Hire, transfer and terminate Fjordtech employees. Compare manual tickets with automated IAM and read the auditor’s findings.' },
   { id: 'pipeline', title: 'Automation pipeline builder', text: 'Assemble a joiner or leaver runbook from blocks, get it reviewed, and read the PowerShell it becomes.' },
   { id: 'oauth', title: 'OAuth flow simulator', text: 'Step through authorization code + PKCE, client credentials and device code, message by message. Then switch on attacks and see which settings stop them.' },
+  { id: 'saml', title: 'SAML flow simulator', text: 'SP- and IdP-initiated SAML sign-in, with the SP’s checks as switches. Forge, replay and redirect assertions, and survive a certificate expiry.' },
+  { id: 'saml-inspector', title: 'SAML inspector', text: 'Paste a SAMLResponse or SAMLRequest and see it decoded: NameID, attributes, audience, validity window, signature and certificate thumbprint.' },
   { id: 'rbac', title: 'RBAC lab', text: 'Fix messy business roles, remove SoD conflicts, and watch privilege creep build up over a career.' },
   { id: 'review', title: 'Access review game', text: 'Sixty seconds, twelve access lines. Catch the risky ones without breaking anyone’s work.' },
 ]

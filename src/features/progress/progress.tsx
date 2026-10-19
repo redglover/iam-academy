@@ -10,6 +10,8 @@ export const BADGES = {
   'rbac-clean': { name: 'Role architect', emoji: '🧩', how: 'Build roles with zero SoD conflicts or excess access' },
   'oauth-defender': { name: 'Token guardian', emoji: '🛡️', how: 'Stop both authorization code attacks in the OAuth simulator' },
   'oauth-real': { name: 'Signed in for real', emoji: '🔑', how: 'Complete a real sign-in in the OAuth playground' },
+  'saml-defender': { name: 'Assertion checker', emoji: '📜', how: 'Handle all four SAML scenarios safely in the simulator' },
+  'saml-inspector': { name: 'SAML tracer', emoji: '🔍', how: 'Decode a SAML message in the inspector' },
   'review-ace': { name: 'Eagle-eyed reviewer', emoji: '🦅', how: 'Catch every risky line in the access review' },
   graduate: { name: 'IAM graduate', emoji: '🏅', how: 'Complete every module' },
 } as const

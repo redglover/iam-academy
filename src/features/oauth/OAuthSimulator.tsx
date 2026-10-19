@@ -1,73 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw, ShieldAlert, ShieldCheck, CheckCircle2 } from 'lucide-react'
-import { ACTORS, DEFAULT_OPTIONS, FLOWS, buildFlow, outcome, type Actor, type AttackId, type Credential, type FlowId, type FlowOptions, type StepKind } from './flows'
-import { CodeBlock } from '../../components/CodeBlock'
-import { Inline } from '../../components/Inline'
+import { ACTORS, DEFAULT_OPTIONS, FLOWS, buildFlow, outcome, type Actor, type AttackId, type Credential, type FlowId, type FlowOptions } from './flows'
+import { AttackVerdict, SequenceDiagram, StepDetail, Toggle, useStepPlayer, type SeqActor } from '../../components/Sequence'
 import { useProgress } from '../progress/progress'
-
-const KIND: Record<StepKind, { line: string; dot: string; text: string }> = {
-  normal: { line: 'bg-key', dot: 'bg-key', text: '' },
-  attack: { line: 'bg-leave', dot: 'bg-leave', text: 'text-leave' },
-  blocked: { line: 'bg-join', dot: 'bg-join', text: 'text-join' },
-  breach: { line: 'bg-leave', dot: 'bg-leave', text: 'text-leave' },
-  success: { line: 'bg-join', dot: 'bg-join', text: 'text-join' },
-}
-
-function Toggle({ on, onChange, label, hint }: { on: boolean; onChange: (v: boolean) => void; label: string; hint: string }) {
-  return (
-    <label className="flex cursor-pointer items-start gap-2.5">
-      <button
-        role="switch"
-        aria-checked={on}
-        onClick={() => onChange(!on)}
-        className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full border-2 border-ink transition-colors ${on ? 'bg-join' : 'bg-line'}`}
-      >
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-paper ring-1 ring-ink transition-all ${on ? 'left-[1.3rem]' : 'left-0.5'}`} />
-      </button>
-      <span>
-        <span className="font-semibold">{label}</span>
-        <span className="block text-sm text-muted">{hint}</span>
-      </span>
-    </label>
-  )
-}
 
 export function OAuthSimulator() {
   const [flow, setFlow] = useState<FlowId>('authcode-pkce')
   const [opts, setOpts] = useState<FlowOptions>(DEFAULT_OPTIONS)
-  const [i, setI] = useState(0)
-  const [playing, setPlaying] = useState(false)
   const defended = useRef(new Set<AttackId>())
   const { award } = useProgress()
 
   const steps = useMemo(() => buildFlow(flow, opts), [flow, opts])
+  const player = useStepPlayer(steps.length, steps)
   const result = outcome(steps)
-  const step = steps[Math.min(i, steps.length - 1)]
-  const atEnd = i >= steps.length - 1
-  const actors: Actor[] = opts.attack !== 'none' ? ['user', 'app', 'idp', 'api', 'attacker'] : ['user', 'app', 'idp', 'api']
-  const set = (p: Partial<FlowOptions>) => {
-    setOpts((o) => ({ ...o, ...p }))
-    setI(0)
-  }
+  const ids: Actor[] = opts.attack !== 'none' ? ['user', 'app', 'idp', 'api', 'attacker'] : ['user', 'app', 'idp', 'api']
+  const actors: SeqActor[] = ids.map((id) => ({ id, ...ACTORS[id], danger: id === 'attacker' }))
+  const set = (p: Partial<FlowOptions>) => setOpts((o) => ({ ...o, ...p }))
 
   useEffect(() => {
-    if (!playing) return
-    if (atEnd) {
-      setPlaying(false)
-      return
-    }
-    const t = setTimeout(() => setI((n) => n + 1), 1800)
-    return () => clearTimeout(t)
-  }, [playing, i, atEnd])
-
-  useEffect(() => {
-    if (!atEnd || result !== 'blocked') return
+    if (!player.atEnd || result !== 'blocked') return
     defended.current.add(opts.attack)
     if (defended.current.has('code-interception') && defended.current.has('csrf')) award('oauth-defender')
-  }, [atEnd, result, opts.attack, award])
-
-  const col = (a: Actor) => actors.indexOf(a)
-  const n = actors.length
+  }, [player.atEnd, result, opts.attack, award])
 
   return (
     <section className="my-8 rounded-[1.75rem] border-2 border-ink bg-fog p-3 sm:p-5" aria-label="OAuth flow simulator">
@@ -138,109 +91,12 @@ export function OAuthSimulator() {
               </option>
             ))}
           </select>
-          {opts.attack !== 'none' && (
-            <span className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${result === 'breach' ? 'text-leave' : 'text-join'}`}>
-              {result === 'breach' ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
-              {result === 'breach' ? 'With these settings the attack succeeds.' : 'With these settings the attack is stopped.'}
-            </span>
-          )}
+          {opts.attack !== 'none' && <AttackVerdict result={result} />}
         </label>
       </div>
 
-      {/* sequence diagram */}
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-paper p-3">
-        <div className="min-w-[560px]">
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
-            {actors.map((a) => (
-              <div key={a} className={`rounded-xl border-2 px-2 py-1.5 text-center ${a === 'attacker' ? 'border-leave/60 bg-leave/10' : 'border-ink'}`}>
-                <p className="font-display text-sm font-bold leading-tight">{ACTORS[a].name}</p>
-                <p className="text-xs text-muted">{ACTORS[a].sub}</p>
-              </div>
-            ))}
-          </div>
-          <ol className="relative mt-1">
-            {/* lifelines */}
-            <div className="pointer-events-none absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }} aria-hidden>
-              {actors.map((a) => (
-                <div key={a} className="mx-auto w-px border-l-2 border-dashed border-line" />
-              ))}
-            </div>
-            {steps.map((s, k) => {
-              const a = col(s.from)
-              const b = col(s.to)
-              const self = a === b
-              const lo = Math.min(a, b)
-              const span = Math.abs(b - a)
-              const active = k === i
-              const visited = k <= i
-              const K = KIND[s.kind]
-              return (
-                <li key={k} className="relative h-11">
-                  <button
-                    onClick={() => setI(k)}
-                    className={`absolute inset-y-1 left-0 right-0 rounded-lg transition-colors ${active ? 'bg-key/10 ring-2 ring-key' : 'hover:bg-ink/5'}`}
-                    aria-label={`Step ${k + 1}: ${s.title}`}
-                    aria-current={active ? 'step' : undefined}
-                  />
-                  {self ? (
-                    <span
-                      className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-xs font-bold text-white ${visited ? K.dot : 'bg-line'}`}
-                      style={{ left: `${((a + 0.5) / n) * 100}%` }}
-                    >
-                      {k + 1}
-                    </span>
-                  ) : (
-                    <span
-                      className="pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center"
-                      style={{ left: `${((lo + 0.5) / n) * 100}%`, width: `${(span / n) * 100}%`, flexDirection: b > a ? 'row' : 'row-reverse' }}
-                    >
-                      <span className={`h-[3px] flex-1 ${visited ? K.line : 'bg-line'}`} />
-                      <span
-                        className={`h-0 w-0 border-y-[6px] border-y-transparent ${b > a ? 'border-l-[9px]' : 'border-r-[9px]'} ${
-                          visited ? (K.line === 'bg-key' ? 'border-l-key border-r-key' : K.line === 'bg-join' ? 'border-l-join border-r-join' : 'border-l-leave border-r-leave') : 'border-l-line border-r-line'
-                        }`}
-                      />
-                      <span className={`absolute left-1/2 -top-2.5 -translate-x-1/2 rounded-full px-1.5 text-[11px] font-bold text-white ${visited ? K.dot : 'bg-line'}`}>{k + 1}</span>
-                    </span>
-                  )}
-                </li>
-              )
-            })}
-          </ol>
-        </div>
-      </div>
-
-      {/* step detail */}
-      <div className="mt-4 rounded-2xl border border-line bg-paper p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted">
-            Step {i + 1} of {steps.length}: {ACTORS[step.from].sub}
-            {step.from !== step.to && ` → ${ACTORS[step.to].sub}`}
-          </p>
-          <div className="flex gap-1.5">
-            <button className="btn py-1 text-sm" onClick={() => setI((k) => Math.max(0, k - 1))} disabled={i === 0} aria-label="Previous step">
-              <ChevronLeft size={16} />
-            </button>
-            <button className="btn py-1 text-sm" onClick={() => (atEnd ? setI(0) : setPlaying((p) => !p))}>
-              {atEnd ? <RotateCcw size={15} /> : playing ? <Pause size={15} /> : <Play size={15} />}
-              {atEnd ? 'Replay' : playing ? 'Pause' : 'Play'}
-            </button>
-            <button className="btn btn-key py-1 text-sm" onClick={() => setI((k) => Math.min(steps.length - 1, k + 1))} disabled={atEnd}>
-              Next <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-        <h4 className={`mt-2 flex items-center gap-2 text-xl font-semibold ${KIND[step.kind].text}`}>
-          {step.kind === 'success' && <CheckCircle2 size={20} />}
-          {step.kind === 'breach' && <ShieldAlert size={20} />}
-          {step.kind === 'blocked' && <ShieldCheck size={20} />}
-          <Inline text={step.title} />
-        </h4>
-        <p className="mt-1 max-w-[70ch]">
-          <Inline text={step.note} />
-        </p>
-        {step.http && <CodeBlock title="On the wire" lang="http" code={step.http} />}
-      </div>
+      <SequenceDiagram actors={actors} steps={steps} current={player.i} onSelect={player.setI} />
+      <StepDetail steps={steps} actors={actors} player={player} />
     </section>
   )
 }

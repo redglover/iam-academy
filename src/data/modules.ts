@@ -650,6 +650,186 @@ Update-MgUser -UserId 'kari.lunde@fjordtech.no' -AccountEnabled:$false`,
     ],
   },
   {
+    slug: 'saml',
+    title: 'SAML single sign-on',
+    tagline: 'The XML protocol behind most enterprise SSO: how it works, how to set it up in Entra, and how it breaks.',
+    minutes: 18,
+    tone: 'auto',
+    blocks: [
+      {
+        t: 'p',
+        text: '**SAML 2.0** (Security Assertion Markup Language) is how most enterprise SaaS apps do single sign-on: Salesforce, ServiceNow, Workday, AWS, Atlassian and thousands more. It is from 2005 and uses XML, but it isn’t going away. In a typical IAM team a large share of the “can you set up SSO for app X?” tickets are SAML.',
+      },
+      { t: 'h', text: 'Two parties and a signed note' },
+      {
+        t: 'compare',
+        items: [
+          { title: 'Identity provider (IdP)', text: 'Authenticates the user and issues a signed **assertion**. In our case Entra ID. Holds the private signing key.', tone: 'key' },
+          { title: 'Service provider (SP)', text: 'The app. Trusts the IdP, receives the assertion, checks it, and creates its own session. Holds the IdP’s public certificate.', tone: 'auto' },
+        ],
+      },
+      {
+        t: 'p',
+        text: 'The assertion is like a signed note from HR to a building guard: “The bearer is Ingrid Haugen, she works in Sales, valid for the next 5 minutes, for the Salesforce building only. Signed, Entra.” The guard doesn’t call HR. They check the signature, the name of the building and the time. The two systems never talk directly: everything travels **through the browser**.',
+      },
+      { t: 'h', text: 'The words you need' },
+      {
+        t: 'table',
+        head: ['Term', 'Meaning', 'Name in Entra'],
+        rows: [
+          ['Entity ID', 'Unique name of the SP (or IdP), usually a URL', 'Identifier'],
+          ['ACS URL', 'Assertion Consumer Service: where the SP receives assertions', 'Reply URL'],
+          ['AuthnRequest', 'The SP’s “please authenticate this user” message', '–'],
+          ['Assertion', 'The signed XML statement about the user', '–'],
+          ['NameID', 'The user identifier the SP matches on', 'Unique User Identifier (Name ID)'],
+          ['Attributes', 'Extra claims: email, name, groups, roles', 'Attributes & Claims'],
+          ['RelayState', 'Where to send the user after sign-in', 'Relay State'],
+          ['Metadata', 'XML file describing an IdP or SP: entity ID, endpoints, certificates', 'Federation Metadata XML'],
+          ['Bindings', 'How messages travel: HTTP-Redirect (in the URL) or HTTP-POST (in a form)', '–'],
+        ],
+      },
+      { t: 'h', text: 'What’s inside an assertion' },
+      {
+        t: 'code',
+        lang: 'xml',
+        title: 'The parts an SP must check (simplified)',
+        code: `<Assertion ID="_a1b2c3d4" IssueInstant="2026-10-19T08:00:00Z">
+  <Issuer>https://sts.windows.net/{tenant-id}/</Issuer>          <!-- who says so -->
+  <ds:Signature>…</ds:Signature>                                 <!-- proof Entra wrote it -->
+  <Subject>
+    <NameID>ingrid.haugen@fjordtech.no</NameID>                  <!-- who the user is -->
+    <SubjectConfirmationData Recipient="https://…/saml/acs"     <!-- where it may be used -->
+        NotOnOrAfter="2026-10-19T08:05:00Z"
+        InResponseTo="_c7f2e9a1"/>                               <!-- which request it answers -->
+  </Subject>
+  <Conditions NotBefore="…07:55:00Z" NotOnOrAfter="…09:00:00Z">  <!-- when it is valid -->
+    <AudienceRestriction>
+      <Audience>https://fjordtech.my.salesforce.com</Audience>   <!-- which app it is for -->
+    </AudienceRestriction>
+  </Conditions>
+  <AttributeStatement>…email, displayname, groups…</AttributeStatement>
+  <AuthnStatement SessionIndex="_a1b2c3d4">…</AuthnStatement>    <!-- how and when they signed in -->
+</Assertion>`,
+        notes: ['Base64 is encoding, not encryption: anyone holding the browser can read an assertion. Entra can additionally encrypt it with the SP’s certificate.'],
+      },
+      { t: 'h', text: 'Try it: watch the flow, then break it' },
+      {
+        t: 'p',
+        text: 'Step through SP-initiated and IdP-initiated sign-in. Then pick a scenario and switch off the SP’s checks one by one to see what each one protects against.',
+      },
+      { t: 'lab', lab: 'saml' },
+      { t: 'h', text: 'SAML vs OpenID Connect' },
+      {
+        t: 'table',
+        head: ['', 'SAML 2.0', 'OpenID Connect'],
+        rows: [
+          ['Format', 'XML assertions, XML signatures', 'JSON / JWT tokens'],
+          ['Transport', 'Browser redirects and form POSTs', 'Redirects plus back-channel HTTPS calls'],
+          ['Best for', 'Enterprise SaaS web apps, legacy apps', 'Modern web, SPA, mobile and API access'],
+          ['API access', 'No. It only signs you in to the app', 'Yes, through OAuth access tokens'],
+          ['Mobile / native apps', 'Awkward', 'Designed for it'],
+          ['In practice', 'Use it when the app only supports SAML', 'Prefer it for anything new you build'],
+        ],
+      },
+      { t: 'h', text: 'Setting up SAML SSO in Entra ID' },
+      {
+        t: 'timeline',
+        items: [
+          { when: 'Add the app', what: 'Entra admin center → Enterprise applications → New application. Use the **gallery** entry if there is one (pre-filled, often with SCIM). Otherwise “Create your own application” → non-gallery.', tone: 'key' },
+          { when: 'Basic SAML config', what: 'Single sign-on → SAML. Enter the **Identifier (Entity ID)** and **Reply URL (ACS)** from the app’s SAML settings, or upload the SP’s metadata file. Sign-on URL is only needed for SP-initiated sign-in from My Apps.', tone: 'key' },
+          { when: 'Claims', what: 'Attributes & Claims: choose the **Unique User Identifier** the app matches on (UPN, email or an immutable ID) and add what the app needs: name, email, groups or app roles.', tone: 'move' },
+          { when: 'Certificate', what: 'SAML Certificates: download the certificate (Base64) or the **Federation Metadata URL** and give it to the SP. Note the expiry date (3 years by default) and add notification emails.', tone: 'leave' },
+          { when: 'SP side', what: 'In the app: paste Entra’s **Login URL**, **Microsoft Entra Identifier** (IdP Entity ID) and certificate. Map the NameID to the app’s user field (e.g. Salesforce Federation ID).', tone: 'auto' },
+          { when: 'Assign and test', what: 'Users and groups: assign who may use the app (set “Assignment required” to Yes). Use **Test single sign-on**, then enforce SSO in the app and keep one break-glass local admin.', tone: 'join' },
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'field',
+        title: 'Certificate expiry is the classic SAML outage',
+        text: 'Entra’s SAML signing certificates expire, 3 years by default. When one does, every sign-in to that app fails. Good practice: notification emails to a shared IAM mailbox, an inventory of SAML apps and their expiry dates (Graph can list `keyCredentials` on service principals), and planned rotation: create the new certificate, give it to the SP, then activate it in Entra.',
+      },
+      { t: 'h', text: 'Troubleshooting cheat sheet' },
+      {
+        t: 'table',
+        head: ['Symptom', 'Usual cause', 'Fix'],
+        rows: [
+          ['AADSTS50011', 'The ACS URL in the request isn’t a registered Reply URL', 'Add the exact URL under Basic SAML Configuration'],
+          ['AADSTS700016', 'No app with that Entity ID in the tenant', 'Make the Identifier in Entra match the SP’s Issuer exactly'],
+          ['AADSTS50105', 'User isn’t assigned to the app', 'Assign the user or their group'],
+          ['AADSTS75011', 'SP demands an authentication method the user didn’t use', 'Remove the RequestedAuthnContext in the SP, or align it'],
+          ['SP: “invalid signature”', 'Certificate on the SP is old or wrong', 'Upload the current certificate, compare thumbprints'],
+          ['SP: “assertion expired / not yet valid”', 'Clock skew between servers', 'Fix NTP on the SP, or allow a few minutes of skew'],
+          ['SP: “user not found”', 'NameID doesn’t match the SP’s user field', 'Align the claim (UPN vs email vs employee ID)'],
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'tip',
+        title: 'Read real assertions',
+        text: 'Install the **SAML-tracer** browser extension, sign in to a SAML app, and paste the SAMLResponse into the inspector below. It shows exactly what Entra sent: the NameID, attributes, audience, validity window and certificate thumbprint. This is the first thing to do when SSO breaks.',
+      },
+      { t: 'lab', lab: 'saml-inspector' },
+      { t: 'h', text: 'SAML and the leaver problem' },
+      {
+        t: 'p',
+        text: 'SAML signs people **in**. It never signs anyone **out of existence**. When Ingrid leaves and her Entra account is disabled, she can’t start new sessions, but:',
+      },
+      {
+        t: 'list',
+        items: [
+          'Her **existing SP session** keeps working until it times out, sometimes for days. Short app session lifetimes or an admin session kill are needed for sensitive apps.',
+          'Her **account in the app still exists**, with its data and any local password or API token. Deprovisioning needs **SCIM** or a connector, not SAML.',
+          'Apps that create users on first sign-in (**JIT provisioning**) never remove them. Run reconciliation against the app’s user list.',
+          'Single Logout (SLO) exists in the standard but is unreliable in practice. Don’t rely on it as a security control.',
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'warn',
+        title: 'Security essentials for SPs',
+        text: 'Validate the signature on the assertion that is actually used (XML signature wrapping attacks hide a forged assertion next to a signed one). Check **Audience**, **Recipient**, time window and **InResponseTo**. Accept each assertion once. Disable IdP-initiated sign-in if the app doesn’t need it, and use well-maintained SAML libraries, never hand-written XML parsing.',
+      },
+    ],
+    quiz: [
+      {
+        q: 'In SAML, which party holds the private key that signs assertions?',
+        options: ['The service provider', 'The identity provider', 'The browser', 'Both share one key'],
+        answer: 1,
+        explain: 'The IdP signs with its private key. The SP verifies with the IdP’s public certificate, which is why the SP needs the certificate and why its expiry matters.',
+      },
+      {
+        q: 'What does Entra call the SP’s Assertion Consumer Service URL?',
+        options: ['Identifier', 'Reply URL', 'Sign-on URL', 'Logout URL'],
+        answer: 1,
+        explain: 'Reply URL = ACS. Identifier = the SP’s Entity ID. A mismatch in the Reply URL gives AADSTS50011.',
+      },
+      {
+        q: 'A forwarded assertion for “Fjordtech Lunch” is accepted by Salesforce. Which check is missing?',
+        options: ['Signature', 'Audience', 'NameID format', 'RelayState'],
+        answer: 1,
+        explain: 'The signature is valid because Entra really signed it, but the audience names a different app. The SP must reject it.',
+      },
+      {
+        q: 'Monday 08:00: nobody can sign in to ServiceNow via SSO. Entra sign-in logs show success. What do you check first?',
+        options: ['The users’ licences', 'Whether the SAML signing certificate expired or was rotated without updating ServiceNow', 'Conditional Access', 'The DNS of Entra ID'],
+        answer: 1,
+        explain: 'Entra issued the assertion fine, so the SP is rejecting it. A certificate mismatch is the classic cause.',
+      },
+      {
+        q: 'Ingrid left yesterday and her Entra account is disabled. Why might she still have access to a SAML app?',
+        options: [
+          'SAML tokens never expire',
+          'Her existing app session is still valid and her app account wasn’t deprovisioned',
+          'Entra caches passwords for SAML apps',
+          'She can’t: disabling the account ends all SAML access instantly',
+        ],
+        answer: 1,
+        explain: 'SAML only controls new sign-ins. Session lifetime in the app and deprovisioning (SCIM) are separate problems the leaver process must handle.',
+      },
+    ],
+  },
+  {
     slug: 'governance',
     title: 'Governance: reviews, SoD and proof',
     tagline: 'Automation gives access. Governance checks that it’s still right.',

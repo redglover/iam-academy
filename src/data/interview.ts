@@ -14,6 +14,14 @@ export const INTERVIEW: { q: string; a: string }[] = [
     a: 'PKCE stops a stolen authorization code from being redeemed: the app sends a hash of a random verifier with the authorize request and must present the verifier when redeeming. Public clients (SPAs, mobile) can’t keep a secret, so PKCE is their protection. Confidential clients should use both. Current best practice is PKCE for every client.',
   },
   {
+    q: 'A user gets an error signing in to a SAML app. How do you troubleshoot?',
+    a: 'First see where it fails. Entra sign-in logs show IdP-side errors (AADSTS50011 reply URL, 700016 identifier, 50105 assignment). If Entra succeeded, the SP rejected the assertion: capture it with SAML-tracer and check the NameID value, audience, recipient, time window and certificate thumbprint against the SP’s configuration. The usual suspects are a rotated or expired certificate, NameID mismatch, or clock skew.',
+  },
+  {
+    q: 'When would you choose SAML over OpenID Connect?',
+    a: 'When the app only supports SAML, which is common for enterprise SaaS. For anything new, especially SPAs, mobile apps or anything that calls APIs, OIDC/OAuth is the better choice. Either way, pair SSO with SCIM for provisioning and deprovisioning.',
+  },
+  {
     q: 'Walk me through what happens when someone leaves the company.',
     a: 'HR sets the end date → IGA or Lifecycle Workflows trigger at the end date (immediately for hostile terminations) → disable the account → revoke sessions → remove groups and roles, which SCIM-deprovisions apps → convert the mailbox to shared and delegate to the manager → remove licences → notify the manager about hardware → log everything → delete after the retention period.',
   },

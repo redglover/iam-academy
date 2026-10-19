@@ -28,6 +28,11 @@ const SHEET: { title: string; tone: string; items: string[] }[] = [
     items: ['User signs in: auth code + PKCE', 'No user (scripts): client credentials', 'No browser: device code (block it if unused)', 'Implicit and password (ROPC): never', 'ID token = for the app, access token = for the API', 'Check state, nonce, iss, aud, exp', 'Secret < certificate < managed identity'],
   },
   {
+    title: 'SAML',
+    tone: 'border-auto',
+    items: ['IdP signs, SP verifies with IdP certificate', 'Entity ID = Identifier, ACS = Reply URL', 'SP checks: signature, audience, recipient, time, InResponseTo, one-time use', 'Track signing certificate expiry (3 years)', 'SAML signs in, SCIM deprovisions', 'Debug with SAML-tracer'],
+  },
+  {
     title: 'Principles',
     tone: 'border-key',
     items: ['Least privilege and need-to-know', 'Separation of duties', 'Zero trust: verify every request', 'Every account and group has an owner', 'No standing admin rights (PIM)'],
