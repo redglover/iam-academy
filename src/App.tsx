@@ -10,6 +10,7 @@ import { ModulePage } from './pages/ModulePage'
 import { Glossary } from './pages/Glossary'
 import { CheatSheet } from './pages/CheatSheet'
 import { Labs } from './pages/Labs'
+import { OAuthPlayground } from './pages/OAuthPlayground'
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -82,6 +83,7 @@ function BadgeToast() {
 const NAV = [
   { to: '/learn/fundamentals', label: 'Learn', match: '/learn' },
   { to: '/labs', label: 'Labs' },
+  { to: '/oauth-playground', label: 'OAuth playground' },
   { to: '/glossary', label: 'Glossary' },
   { to: '/cheat-sheet', label: 'Cheat sheet' },
 ]
@@ -124,6 +126,7 @@ function Shell() {
           <Route path="/labs" element={<Labs />} />
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/cheat-sheet" element={<CheatSheet />} />
+          <Route path="/oauth-playground" element={<OAuthPlayground />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </main>

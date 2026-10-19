@@ -23,6 +23,11 @@ const SHEET: { title: string; tone: string; items: string[] }[] = [
     items: ['Event-driven + scheduled reconciliation', 'Idempotent, desired-state logic', 'Managed identity, least-privilege Graph scopes', 'Retry with backoff on HTTP 429', 'Dry-run mode and safety thresholds', 'Structured audit log to SIEM'],
   },
   {
+    title: 'OAuth / OIDC',
+    tone: 'border-key',
+    items: ['User signs in: auth code + PKCE', 'No user (scripts): client credentials', 'No browser: device code (block it if unused)', 'Implicit and password (ROPC): never', 'ID token = for the app, access token = for the API', 'Check state, nonce, iss, aud, exp', 'Secret < certificate < managed identity'],
+  },
+  {
     title: 'Principles',
     tone: 'border-key',
     items: ['Least privilege and need-to-know', 'Separation of duties', 'Zero trust: verify every request', 'Every account and group has an owner', 'No standing admin rights (PIM)'],

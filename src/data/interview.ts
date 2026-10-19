@@ -2,6 +2,18 @@
 
 export const INTERVIEW: { q: string; a: string }[] = [
   {
+    q: 'What is the difference between OAuth 2.0 and OpenID Connect?',
+    a: 'OAuth 2.0 is delegated authorization: it gives an app an access token to call an API on a user’s behalf. OpenID Connect is a layer on top that adds authentication: an ID token that tells the app who signed in, plus standard claims and discovery. Sign-in uses OIDC, API access uses OAuth.',
+  },
+  {
+    q: 'Which OAuth flow would you use for a scheduled PowerShell job that disables leavers?',
+    a: 'Client credentials, since no user is involved. Ideally from Azure Automation with a managed identity, or with a certificate rather than a client secret. Grant only the application permissions it needs (e.g. User.ReadWrite.All or a narrower custom role), get admin consent, and give the app an owner and a review date.',
+  },
+  {
+    q: 'Why is PKCE needed, and does it replace the client secret?',
+    a: 'PKCE stops a stolen authorization code from being redeemed: the app sends a hash of a random verifier with the authorize request and must present the verifier when redeeming. Public clients (SPAs, mobile) can’t keep a secret, so PKCE is their protection. Confidential clients should use both. Current best practice is PKCE for every client.',
+  },
+  {
     q: 'Walk me through what happens when someone leaves the company.',
     a: 'HR sets the end date → IGA or Lifecycle Workflows trigger at the end date (immediately for hostile terminations) → disable the account → revoke sessions → remove groups and roles, which SCIM-deprovisions apps → convert the mailbox to shared and delegate to the manager → remove licences → notify the manager about hardware → log everything → delete after the retention period.',
   },

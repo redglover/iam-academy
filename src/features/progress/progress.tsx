@@ -8,6 +8,8 @@ export const BADGES = {
   'jml-manual': { name: 'Learned the hard way', emoji: '🔥', how: 'Find 3+ issues in manual mode' },
   'pipeline-100': { name: 'Runbook reviewer', emoji: '🛠️', how: 'Score 100 on a pipeline' },
   'rbac-clean': { name: 'Role architect', emoji: '🧩', how: 'Build roles with zero SoD conflicts or excess access' },
+  'oauth-defender': { name: 'Token guardian', emoji: '🛡️', how: 'Stop both authorization code attacks in the OAuth simulator' },
+  'oauth-real': { name: 'Signed in for real', emoji: '🔑', how: 'Complete a real sign-in in the OAuth playground' },
   'review-ace': { name: 'Eagle-eyed reviewer', emoji: '🦅', how: 'Catch every risky line in the access review' },
   graduate: { name: 'IAM graduate', emoji: '🏅', how: 'Complete every module' },
 } as const

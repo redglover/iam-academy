@@ -5,6 +5,19 @@ export interface Term {
 }
 
 export const GLOSSARY: Term[] = [
+  { term: 'OAuth 2.0', def: 'Framework for delegated authorization: an app gets an access token to call an API on a user’s or its own behalf.', module: 'oauth' },
+  { term: 'OpenID Connect (OIDC)', def: 'Identity layer on top of OAuth 2.0. Adds the ID token so apps learn who signed in.', module: 'oauth' },
+  { term: 'PKCE', def: 'Proof Key for Code Exchange. The app proves it is the one that started the flow, so a stolen authorization code is useless.', module: 'oauth' },
+  { term: 'Access token', def: 'Short-lived credential an app presents to an API. Meant for the API, opaque to the app.', module: 'oauth' },
+  { term: 'ID token', def: 'JWT that tells the app who signed in. Meant for the app, never sent to APIs.', module: 'oauth' },
+  { term: 'Refresh token', def: 'Long-lived token used to get new access tokens without the user signing in again.', module: 'oauth' },
+  { term: 'Scope', def: 'A delegated permission an app asks for, e.g. User.Read. Shows up in the scp claim.', module: 'oauth' },
+  { term: 'Consent', def: 'Approval for an app to get permissions, given by the user or, for sensitive ones, an admin.', module: 'oauth' },
+  { term: 'Client credentials', def: 'OAuth flow where an app authenticates as itself, with no user. Used for daemons and automation.', module: 'oauth' },
+  { term: 'Redirect URI', def: 'Where the authorization server sends the user back. Must exactly match a value registered on the app.', module: 'oauth' },
+  { term: 'App registration', def: 'The global definition of an app in Entra ID: client ID, redirect URIs, credentials, requested permissions.', module: 'oauth' },
+  { term: 'Service principal', def: 'An app’s instance in a tenant (Enterprise application). Holds consents, assignments and sign-in logs.', module: 'oauth' },
+  { term: 'JWT', def: 'JSON Web Token: header.payload.signature, base64url-encoded and signed. The format of ID tokens and most access tokens.', module: 'oauth' },
   { term: 'AAA', def: 'Authentication, Authorization, Accounting: prove who you are, decide what you may do, record what you did.', module: 'fundamentals' },
   { term: 'ABAC', def: 'Attribute-based access control. Access computed from attributes such as department, location and employment type.', module: 'access-models' },
   { term: 'Access review', def: 'Periodic check where a reviewer confirms or revokes existing access. Also called certification or attestation.', module: 'governance' },

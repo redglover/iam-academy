@@ -1,7 +1,7 @@
 export type Tone = 'key' | 'join' | 'move' | 'leave' | 'auto'
 
-export type LabId = 'jml' | 'pipeline' | 'rbac' | 'review'
-export type DiagramId = 'jml-flow' | 'automation-arch' | 'lifecycle'
+export type LabId = 'jml' | 'pipeline' | 'rbac' | 'review' | 'oauth'
+export type DiagramId = 'jml-flow' | 'automation-arch' | 'lifecycle' | 'oauth-roles'
 
 export type Block =
   | { t: 'p'; text: string }

@@ -4,6 +4,7 @@ import type { DiagramId } from '../data/types'
 export function Diagram({ id }: { id: DiagramId }) {
   if (id === 'lifecycle') return <IdentityAccounts />
   if (id === 'jml-flow') return <JmlMatrix />
+  if (id === 'oauth-roles') return <OAuthRoles />
   return <AutomationArch />
 }
 
@@ -147,6 +148,29 @@ function AutomationArch() {
         <Node title="Service desk ticket" sub="fallback for systems with no API, tracked to closure" cls="border-dashed border-line" />
       </div>
       <figcaption className="mt-2 text-sm text-muted">A typical Microsoft-centric automation chain. Each arrow is something you build, monitor and fix.</figcaption>
+    </figure>
+  )
+}
+
+function OAuthRoles() {
+  const roles = [
+    { name: 'Resource owner', who: 'Ingrid', does: 'Owns the data and approves access (consent).', cls: 'border-join/50' },
+    { name: 'Client', who: 'Fjordtech Portal', does: 'The app that wants to act. Never sees the password.', cls: 'border-auto/60' },
+    { name: 'Authorization server', who: 'Entra ID', does: 'Authenticates the user, asks for consent, issues tokens.', cls: 'border-key/60' },
+    { name: 'Resource server', who: 'Microsoft Graph', does: 'The API. Accepts valid access tokens with the right scopes.', cls: 'border-move/60' },
+  ]
+  return (
+    <figure className="my-8">
+      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {roles.map((r) => (
+          <li key={r.name} className={`rounded-xl border-2 bg-paper p-4 ${r.cls}`}>
+            <p className="font-display text-lg font-bold">{r.name}</p>
+            <p className="text-sm font-semibold text-muted">{r.who}</p>
+            <p className="mt-1 text-[0.95rem]">{r.does}</p>
+          </li>
+        ))}
+      </ol>
+      <figcaption className="mt-2 text-sm text-muted">The four roles of OAuth, using Fjordtech’s cast. The client gets a token, not the password.</figcaption>
     </figure>
   )
 }

@@ -450,6 +450,206 @@ Write-Output (@{ action='leaver'; upn=$user.UserPrincipalName; at=(Get-Date -AsU
     ],
   },
   {
+    slug: 'oauth',
+    title: 'OAuth 2.0 and OpenID Connect',
+    tagline: 'How apps get access without your password, and how to set it up in Entra ID.',
+    minutes: 20,
+    tone: 'key',
+    blocks: [
+      {
+        t: 'p',
+        text: 'Every “Sign in with Microsoft” button, every SaaS app connected to Entra ID, and every automation script that calls Graph uses **OAuth 2.0**. As an IAM engineer you register these apps, choose their permissions, approve consent, troubleshoot sign-in errors, and clean up the ones nobody owns.',
+      },
+      { t: 'h', text: 'The idea: a key card, not your password' },
+      {
+        t: 'p',
+        text: 'At a hotel you show ID once at the front desk and get a key card that opens *your room*, *until checkout*. OAuth works the same way: you prove who you are to the **authorization server** once, and the app receives a **token** that grants specific access for a limited time. The app never sees your password, and the token can be revoked without changing it.',
+      },
+      { t: 'diagram', id: 'oauth-roles' },
+      {
+        t: 'compare',
+        items: [
+          { title: 'OAuth 2.0: authorization', text: 'Gives an app an **access token** to call an API. Answers “what may this app do?”. On its own it says nothing reliable about who the user is.', tone: 'key' },
+          { title: 'OpenID Connect: authentication', text: 'A layer on top of OAuth that adds the **ID token**: a signed statement of who signed in. Answers “who is this?”. Sign-in buttons are OIDC.', tone: 'join' },
+        ],
+      },
+      { t: 'h', text: 'Three tokens, three jobs' },
+      {
+        t: 'table',
+        head: ['Token', 'For whom', 'What it’s for', 'Lifetime (Entra)'],
+        rows: [
+          ['ID token', 'The app', 'Who signed in: name, `oid`, `tid`, `nonce`', '~1 hour'],
+          ['Access token', 'The API', 'Calling the API. Carries `aud`, `scp` or `roles`', '60–90 min by default'],
+          ['Refresh token', 'The authorization server', 'Getting new access tokens silently', '24 h for SPAs, up to 90 days otherwise'],
+        ],
+      },
+      {
+        t: 'p',
+        text: 'Most of these are **JWTs**: three base64url parts, `header.payload.signature`. Anyone can decode them, so they are signed, not secret. The receiver checks the signature with the issuer’s public key (found via the `kid` header), then checks `iss`, `aud` and `exp`. In the playground you can decode your own.',
+      },
+      { t: 'h', text: 'Which flow when' },
+      {
+        t: 'table',
+        head: ['Flow', 'Use it for', 'Notes'],
+        rows: [
+          ['Authorization code + PKCE', 'Any app where a user signs in: web, SPA, mobile, desktop', 'The default. PKCE for every client, even with a secret.'],
+          ['Client credentials', 'Daemons, scheduled jobs, service-to-service. No user.', 'App permissions (`roles`), admin consent. Your JML runbooks use this.'],
+          ['Device code', 'CLIs, TVs, devices without a browser', 'Popular with phishers. Block it with Conditional Access where it isn’t needed.'],
+          ['On-behalf-of', 'An API calling another API as the user', 'Exchanges the incoming token for a new one.'],
+          ['Implicit, password (ROPC)', 'Nothing new', 'Deprecated. Tokens in URLs, or the app handling passwords and skipping MFA.'],
+        ],
+      },
+      { t: 'h', text: 'Authorization code + PKCE, step by step' },
+      {
+        t: 'timeline',
+        items: [
+          { when: '1. Prepare', what: 'The app creates random `state`, `nonce` and a **code verifier**, and hashes the verifier into a **code challenge**.', tone: 'key' },
+          { when: '2. Authorize', what: 'The browser is sent to `/authorize` with client ID, redirect URI, scopes, state, nonce and the challenge.', tone: 'key' },
+          { when: '3. Sign in', what: 'The user authenticates (MFA, Conditional Access) and consents to the scopes.', tone: 'join' },
+          { when: '4. Callback', what: 'Entra redirects to the redirect URI with a short-lived, single-use **code** and the same state.', tone: 'key' },
+          { when: '5. Redeem', what: 'The app POSTs code + **verifier** to `/token`. Entra checks that the verifier hashes to the challenge.', tone: 'auto' },
+          { when: '6. Use', what: 'The app validates the ID token, then calls the API with `Authorization: Bearer <access token>`.', tone: 'join' },
+        ],
+      },
+      {
+        t: 'code',
+        lang: 'http',
+        title: 'Step 2: the authorize request',
+        code: `GET https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize
+  ?client_id=6731de76-14a6-49ae-97bc-6eba6914391e
+  &response_type=code
+  &redirect_uri=https%3A%2F%2Fportal.fjordtech.no%2Fcallback
+  &scope=openid%20profile%20User.Read
+  &state=af0ifjsldkj
+  &nonce=n-0S6_WzA2Mj
+  &code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+  &code_challenge_method=S256`,
+        notes: ['`{tenant}`: your tenant ID, or `organizations` / `common` / `consumers` for multi-tenant apps.', 'Nothing here is secret. It travels through the address bar.'],
+      },
+      {
+        t: 'code',
+        lang: 'http',
+        title: 'Step 5: redeeming the code',
+        code: `POST https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id=6731de76-14a6-49ae-97bc-6eba6914391e
+&grant_type=authorization_code
+&code=0.AXkA3Lq…
+&redirect_uri=https%3A%2F%2Fportal.fjordtech.no%2Fcallback
+&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk`,
+        notes: ['A confidential client (a web server) would also send its credential here. An SPA can’t keep one, so PKCE is its protection.'],
+      },
+      { t: 'h', text: 'Try it: watch the flows, then attack them' },
+      {
+        t: 'p',
+        text: 'Step through each flow message by message. Then pick an attack and toggle the defences to see which setting stops it.',
+      },
+      { t: 'lab', lab: 'oauth' },
+      { t: 'h', text: 'Setting it up in Entra ID' },
+      {
+        t: 'compare',
+        items: [
+          { title: 'App registration', text: 'The *definition* of the app: client ID, redirect URIs, credentials, the permissions it asks for. Lives in the home tenant.', tone: 'key' },
+          { title: 'Enterprise application', text: 'The *service principal*: the app’s instance in a tenant. Holds consents, user assignments, Conditional Access targeting and sign-in logs. This is what you govern.', tone: 'auto' },
+        ],
+      },
+      {
+        t: 'timeline',
+        items: [
+          { when: 'Register', what: 'Entra admin center → App registrations → New registration. Name it and choose the supported account types (single tenant unless you need more).', tone: 'key' },
+          { when: 'Redirect URI', what: 'Pick the **platform**: *Web* (server apps, can hold a secret), *Single-page application* (browser code, PKCE, CORS on the token endpoint), or *Mobile & desktop*. The URI must match exactly.', tone: 'key' },
+          { when: 'Permissions', what: '**Delegated** (`scp`) when acting as the signed-in user, **Application** (`roles`) for client credentials. Ask for the least you need.', tone: 'move' },
+          { when: 'Consent', what: 'Users can consent to low-risk delegated permissions if policy allows. Application permissions and sensitive scopes need **admin consent**.', tone: 'move' },
+          { when: 'Credentials', what: 'Only for confidential clients. Prefer **managed identity** or **federated credentials**, then **certificates**. Use client secrets only if you must, with short expiry.', tone: 'leave' },
+          { when: 'Govern', what: 'Assign owners, require user assignment for sensitive apps, target them with Conditional Access, and include them in access reviews.', tone: 'auto' },
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'tip',
+        title: 'Do it for real',
+        text: 'Open the [OAuth playground](#/oauth-playground): register an app in your own tenant, sign in with authorization code + PKCE, and read your own decoded ID token and access token.',
+      },
+      {
+        t: 'code',
+        lang: 'powershell',
+        title: 'Client credentials with a certificate: the automation pattern',
+        code: `# One-time: the app registration has the application permission User.ReadWrite.All (admin-consented)
+# and a certificate uploaded under "Certificates & secrets". The private key stays on the runner.
+
+Connect-MgGraph -ClientId '6731de76-14a6-49ae-97bc-6eba6914391e' \`
+                -TenantId 'fjordtech.onmicrosoft.com' \`
+                -CertificateThumbprint 'A1B2C3D4E5F60718293A4B5C6D7E8F9012345678'
+
+(Get-MgContext).Scopes        # → User.ReadWrite.All  (these are app "roles", not delegated scopes)
+Update-MgUser -UserId 'kari.lunde@fjordtech.no' -AccountEnabled:$false`,
+        notes: ['Under the hood: a JWT signed with the private key is sent as `client_assertion` to `/token` with `grant_type=client_credentials` and `scope=https://graph.microsoft.com/.default`.', 'Running in Azure? Skip the certificate and use `Connect-MgGraph -Identity` with a managed identity.'],
+      },
+      { t: 'h', text: 'Security checklist' },
+      {
+        t: 'list',
+        items: [
+          '**state** on every authorize request, checked on the callback (stops login CSRF).',
+          '**PKCE** for every client (stops stolen authorization codes being redeemed).',
+          '**nonce** checked inside the ID token (stops replayed ID tokens).',
+          'Validate ID tokens properly: signature, `iss`, `aud`, `exp`. Never trust a token just because it decodes.',
+          'Keep tokens in memory in SPAs, not localStorage, where any injected script can read them.',
+          'Exact redirect URIs. No wildcards, no open redirects.',
+          'Least privilege: `User.Read`, not `Directory.ReadWrite.All`, because you can.',
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'warn',
+        title: 'Consent phishing: an IAM problem, not just a developer one',
+        text: 'Attackers register a legit-looking multi-tenant app (“Fjordtech Docs Viewer”) that asks for `Mail.Read` and `offline_access`, then email a sign-in link. One click on *Accept* gives them persistent mailbox access, MFA included, no password stolen. Defences: restrict user consent to verified publishers and low-risk permissions, enable the **admin consent workflow**, and regularly review enterprise apps and their granted permissions.',
+      },
+    ],
+    quiz: [
+      {
+        q: 'Which token should an app send to Microsoft Graph?',
+        options: ['The ID token', 'The access token', 'The refresh token', 'The authorization code'],
+        answer: 1,
+        explain: 'Access tokens are for APIs. The ID token is for the app itself and must never be sent to APIs as a credential.',
+      },
+      {
+        q: 'An attacker steals an authorization code from a mobile app’s redirect. What stops them redeeming it?',
+        options: ['The state parameter', 'PKCE', 'The nonce', 'HTTPS'],
+        answer: 1,
+        explain: 'Only the app that created the code verifier can redeem the code. State protects the callback against CSRF, and nonce protects the ID token against replay.',
+      },
+      {
+        q: 'Your nightly leaver runbook needs to disable users in Entra ID. Which setup is best?',
+        options: [
+          'Authorization code flow with the IAM admin’s account',
+          'Client credentials with a client secret in the script',
+          'Client credentials with a managed identity or certificate and the minimum application permission',
+          'Device code flow every night',
+        ],
+        answer: 2,
+        explain: 'No user is involved, so it’s client credentials. Avoid secrets that can leak, and grant only what the job needs.',
+      },
+      {
+        q: 'The sign-in page shows AADSTS50011. What’s wrong?',
+        options: ['The user has no licence', 'The redirect URI in the request doesn’t match the app registration', 'MFA failed', 'The token expired'],
+        answer: 1,
+        explain: 'Redirect URIs must match exactly, trailing slash included. It’s the most common setup error.',
+      },
+      {
+        q: 'In an access token, what is the difference between `scp` and `roles`?',
+        options: [
+          'No difference',
+          '`scp` = delegated permissions for a signed-in user; `roles` = app roles, including application permissions in client credentials',
+          '`scp` is for v1 tokens only',
+          '`roles` lists the user’s Entra admin roles',
+        ],
+        answer: 1,
+        explain: 'Delegated permissions appear as scopes. Application permissions, and app roles assigned to users, appear as roles.',
+      },
+    ],
+  },
+  {
     slug: 'governance',
     title: 'Governance: reviews, SoD and proof',
     tagline: 'Automation gives access. Governance checks that it’s still right.',
