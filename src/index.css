@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --fog: 242 245 250;
+  --paper: 255 255 255;
+  --ink: 26 30 58;
+  --muted: 88 96 128;
+  --line: 214 221 235;
+  --key: 47 91 255;
+  --join: 18 150 104;
+  --move: 214 140 6;
+  --leave: 222 60 66;
+  --auto: 124 92 255;
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  --fog: 17 20 38;
+  --paper: 27 31 56;
+  --ink: 232 236 250;
+  --muted: 160 168 200;
+  --line: 52 58 92;
+  --key: 110 142 255;
+  --join: 52 211 153;
+  --move: 251 191 36;
+  --leave: 255 107 112;
+  --auto: 167 145 255;
+  color-scheme: dark;
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-fog text-ink font-sans antialiased;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4 { @apply font-display text-ink; letter-spacing: -0.02em; line-height: 1.1; }
+  ::selection { background: rgb(var(--key) / .25); }
+  :focus-visible { outline: 3px solid rgb(var(--key)); outline-offset: 2px; border-radius: 6px; }
+  code { @apply font-mono; font-size: .88em; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border-2 border-ink px-4 py-2 font-display font-semibold
+      text-ink bg-paper shadow-lift transition-transform active:translate-y-[2px] active:shadow-none disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .btn-key { @apply bg-key text-white border-ink; }
+  [data-theme='dark'] .btn-key { @apply text-fog; }
+  .btn-ghost { @apply border-transparent shadow-none bg-transparent hover:bg-ink/5; }
+  .panel { @apply rounded-badge border border-line bg-paper; }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium;
+  }
+  .prose-iam p { @apply my-3 max-w-[68ch]; }
+  .prose-iam :not(pre) > code { @apply rounded bg-ink/[.07] px-1.5 py-0.5; }
+  .prose-iam strong { @apply font-bold; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}
