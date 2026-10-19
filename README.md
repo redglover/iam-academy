@@ -4,7 +4,7 @@ An interactive site for learning **Identity & Access Management** by doing. You 
 
 ## What's inside
 
-**Eleven modules**, each ending with a quiz:
+**Twelve modules**, each ending with a quiz:
 
 1. Identity, accounts and access
 2. The principles that never change (least privilege, SoD, zero trust, creep, orphans)
@@ -15,10 +15,11 @@ An interactive site for learning **Identity & Access Management** by doing. You 
 7. SAML single sign-on (assertions, Entra enterprise app setup, certificates, troubleshooting)
 8. SCIM provisioning (schema, PATCH, Entra provisioning cycles, matching, scoping, quarantine)
 9. Governance: access reviews, SoD, KPIs
-10. Privileged access (PIM, JIT, break-glass, non-human identities)
-11. Compliance and the Norwegian context (GDPR, NSM, ISO 27001, NIS2)
+10. Conditional Access (policy anatomy, evaluation rules, baseline, rollout, CAE, troubleshooting)
+11. Privileged access (PIM, JIT, break-glass, non-human identities)
+12. Compliance and the Norwegian context (GDPR, NSM, ISO 27001, NIS2)
 
-**Eight labs and a playground:**
+**Nine labs and a playground:**
 
 - **JML simulator**: fire HR events in *manual* or *automated* mode, watch the audit log and the auditor's findings
 - **Automation pipeline builder**: assemble a joiner/leaver runbook, get it reviewed, read the generated PowerShell
@@ -27,6 +28,7 @@ An interactive site for learning **Identity & Access Management** by doing. You 
 - **SAML flow simulator**: SP- and IdP-initiated sign-in with the SP's validation checks as switches (forged, replayed and redirected assertions, certificate expiry)
 - **SAML inspector**: decode a captured SAMLResponse/SAMLRequest and check audience, recipient, validity window, signature and certificate thumbprint
 - **SCIM lab**: an in-browser SCIM 2.0 server. Run Entra-style provisioning cycles (joiner, mover, leaver, unassign, rename, expired token) and inspect every request, or send your own in the console
+- **Conditional Access lab**: a What If tool over Fjordtech's policy set (on/report-only/off per policy), plus six build-a-policy missions checked by test sign-ins
 - **RBAC lab**: fix business roles, remove SoD conflicts, watch privilege creep build up
 - **Access review game**: 60 seconds, 12 lines, catch the risky ones
 
@@ -60,6 +62,7 @@ Vite, React 18, TypeScript, Tailwind CSS, framer-motion, lucide-react. The simul
 - `src/features/automation/pipeline.ts`: runbook blocks, validator, script generator
 - `src/features/rbac-lab/sod.ts`: separation-of-duties rules
 - `src/features/oauth/`, `src/features/saml/`: protocol simulators, PKCE/JWT helpers, SAML decoder
+- `src/features/ca/engine.ts`: Conditional Access evaluation (exclusions, block wins, combined grants, report-only)
 - `src/features/scim/server.ts`: in-memory SCIM 2.0 server (filters, PATCH, groups); `provisioning.ts`: Entra-style provisioning cycles
 
 Course content lives in `src/data/` as typed data, so adding a module means adding an object to `modules.ts`.

@@ -5,6 +5,7 @@ export function Diagram({ id }: { id: DiagramId }) {
   if (id === 'lifecycle') return <IdentityAccounts />
   if (id === 'jml-flow') return <JmlMatrix />
   if (id === 'oauth-roles') return <OAuthRoles />
+  if (id === 'ca-engine') return <CaEngine />
   return <AutomationArch />
 }
 
@@ -171,6 +172,49 @@ function OAuthRoles() {
         ))}
       </ol>
       <figcaption className="mt-2 text-sm text-muted">The four roles of OAuth, using Fjordtech’s cast. The client gets a token, not the password.</figcaption>
+    </figure>
+  )
+}
+
+function CaEngine() {
+  const signals = ['Who: user, group, role, guest', 'What: target app or action', 'Device: platform, compliance', 'Where: location, IP', 'How: browser, app, legacy', 'Risk: sign-in and user risk']
+  const outcomes = [
+    { t: 'Block', d: 'Access denied', cls: 'border-leave/60 bg-leave/[.06]' },
+    { t: 'Grant with controls', d: 'MFA, compliant device, app protection…', cls: 'border-join/60 bg-join/[.06]' },
+    { t: 'Allow', d: 'No policy applied', cls: 'border-move/60 bg-move/[.06]' },
+  ]
+  return (
+    <figure className="my-8">
+      <div className="grid items-center gap-3 md:grid-cols-[1fr_auto_auto_auto_1fr]">
+        <ul className="grid gap-1.5">
+          {signals.map((x) => (
+            <li key={x} className="rounded-lg border border-line bg-paper px-3 py-1.5 text-sm">
+              {x}
+            </li>
+          ))}
+        </ul>
+        <div className="flex justify-center text-key" aria-hidden>
+          <ArrowRight className="hidden md:block" size={24} />
+          <ArrowDown className="md:hidden" size={24} />
+        </div>
+        <div className="rounded-xl border-2 border-ink bg-paper px-4 py-5 text-center">
+          <p className="font-display text-lg font-bold">Policy engine</p>
+          <p className="text-sm text-muted">every applicable policy, combined</p>
+        </div>
+        <div className="flex justify-center text-key" aria-hidden>
+          <ArrowRight className="hidden md:block" size={24} />
+          <ArrowDown className="md:hidden" size={24} />
+        </div>
+        <ul className="grid gap-1.5">
+          {outcomes.map((o) => (
+            <li key={o.t} className={`rounded-lg border-2 px-3 py-2 ${o.cls}`}>
+              <p className="font-display font-bold">{o.t}</p>
+              <p className="text-sm text-muted">{o.d}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <figcaption className="mt-2 text-sm text-muted">Conditional Access runs after the first sign-in factor, on every token request, and decides what happens next.</figcaption>
     </figure>
   )
 }

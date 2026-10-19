@@ -14,6 +14,8 @@ export const BADGES = {
   'saml-inspector': { name: 'SAML tracer', emoji: '🔍', how: 'Decode a SAML message in the inspector' },
   'scim-cycle': { name: 'Provisioner', emoji: '🔄', how: 'See a create, an update and a deactivate in SCIM provisioning cycles' },
   'scim-console': { name: 'API whisperer', emoji: '📡', how: 'Send a successful request in the SCIM console' },
+  'ca-detective': { name: 'What If detective', emoji: '🕵️', how: 'Try 5 different sign-ins in the Conditional Access What If tool' },
+  'ca-architect': { name: 'Policy architect', emoji: '🏛️', how: 'Complete every Conditional Access mission' },
   'review-ace': { name: 'Eagle-eyed reviewer', emoji: '🦅', how: 'Catch every risky line in the access review' },
   graduate: { name: 'IAM graduate', emoji: '🏅', how: 'Complete every module' },
 } as const

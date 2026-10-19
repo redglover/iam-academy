@@ -30,6 +30,14 @@ export const INTERVIEW: { q: string; a: string }[] = [
     a: 'The matching attribute: whether the app’s existing users can be matched 1:1 to Entra users (e.g. userName = UPN), otherwise the first cycle creates duplicates. Then the attribute mappings the app supports, scope (start with a pilot group), what the app does on deactivation, token lifetime and owner, and failure notifications. Test with Provision on demand before switching it on.',
   },
   {
+    q: 'How would you design a Conditional Access baseline for a new tenant?',
+    a: 'Start with: MFA for all users on all apps, block legacy authentication, phishing-resistant MFA for admin roles, compliant devices for sensitive apps, block device code flow, protect security info registration, and risk-based policies if P2 is available. Exclude two monitored break-glass accounts from everything, use a naming convention, roll out via report-only and a pilot group, and keep the policies as code with backups.',
+  },
+  {
+    q: 'A user says Conditional Access blocked them. How do you troubleshoot?',
+    a: 'Find the sign-in in the Entra sign-in logs and open the Conditional Access tab: it shows every policy, whether it applied, and which grant control failed. The error code helps (53003 blocked, 53000 device not compliant, 50076 MFA). Then reproduce with the What If tool using the same user, app, platform, location and client. Usual causes: legacy client, unmanaged device, unexpected location, or the user being in a scope they shouldn’t be.',
+  },
+  {
     q: 'Walk me through what happens when someone leaves the company.',
     a: 'HR sets the end date → IGA or Lifecycle Workflows trigger at the end date (immediately for hostile terminations) → disable the account → revoke sessions → remove groups and roles, which SCIM-deprovisions apps → convert the mailbox to shared and delegate to the manager → remove licences → notify the manager about hardware → log everything → delete after the retention period.',
   },

@@ -1071,6 +1071,168 @@ Invoke-RestMethod "$base/Users/u-0001" -Method Patch -Headers $headers -Body $bo
     ],
   },
   {
+    slug: 'ca',
+    title: 'Conditional Access',
+    tagline: 'The Zero Trust policy engine behind every Entra ID sign-in: how it decides, and how to roll it out without locking anyone out.',
+    minutes: 20,
+    tone: 'leave',
+    blocks: [
+      {
+        t: 'p',
+        text: '**Conditional Access (CA)** is Entra ID’s if-then engine: *if* this user, on this device, from here, to this app, at this risk level, *then* block, or allow after MFA or a device check. It is how Zero Trust becomes concrete: no request is trusted because it comes from the office network. In most Microsoft shops, the CA policy set is one of the most important things the IAM team owns.',
+      },
+      { t: 'diagram', id: 'ca-engine' },
+      { t: 'h', text: 'Anatomy of a policy' },
+      {
+        t: 'table',
+        head: ['Part', 'What you set', 'Examples'],
+        rows: [
+          ['Users', 'Include and exclude users, groups, directory roles, guests, workload identities', 'All users except break-glass; Admin roles; Guests'],
+          ['Target resources', 'Cloud apps, user actions, or authentication contexts', 'All apps; Visma ERP; “Register security information”'],
+          ['Conditions', 'User risk, sign-in risk, device platforms, locations, client apps, filter for devices, authentication flows', 'Legacy clients; iOS/Android; outside trusted locations; high risk'],
+          ['Grant controls', 'Block, or grant requiring one or all of the selected controls', 'MFA, authentication strength, compliant or hybrid-joined device, app protection, password change'],
+          ['Session controls', 'Limits after sign-in', 'Sign-in frequency, no persistent browser, app-enforced restrictions, CAE'],
+          ['State', 'On, Report-only, or Off', 'Always start in Report-only'],
+        ],
+      },
+      { t: 'h', text: 'How Entra combines policies' },
+      {
+        t: 'list',
+        items: [
+          '**Every policy is evaluated.** It’s not a firewall rule list: there is no order and no “first match wins”.',
+          '**Exclusions beat inclusions.** If you are in both, you are out.',
+          '**Block wins.** If any applicable policy blocks, nothing else matters.',
+          '**All grants must be met.** If one policy requires MFA and another a compliant device, the user needs both.',
+          '**No applicable policy means password only.** Gaps in coverage are silent. That’s why “all users, all apps” baselines matter.',
+          '**Some controls can’t be met by some clients.** Legacy protocols can’t do MFA, so “require MFA” blocks them anyway, without an explanation in the client.',
+        ],
+      },
+      { t: 'h', text: 'Try it: What If, then build your own' },
+      {
+        t: 'p',
+        text: 'In **What If**, pick a scenario and see which of Fjordtech’s policies apply, why the others don’t, and the final decision. Turn policies off or to report-only to see the gaps. In **Policy missions**, build policies that meet a goal; test sign-ins check your work.',
+      },
+      { t: 'lab', lab: 'ca' },
+      { t: 'h', text: 'A solid baseline policy set' },
+      {
+        t: 'timeline',
+        items: [
+          { when: 'CA001', what: '**All users, all apps: require MFA.** The single most valuable policy. Exclude break-glass.', tone: 'key' },
+          { when: 'CA002', what: '**Block legacy authentication.** IMAP, POP, SMTP AUTH and other basic auth can’t do MFA and are a favourite for password spraying.', tone: 'leave' },
+          { when: 'CA003', what: '**Admin roles: phishing-resistant MFA** (authentication strength). Admins are the prize, and push notifications can be phished or fatigue-bombed.', tone: 'leave' },
+          { when: 'CA004', what: '**Sensitive apps: require a compliant device.** Finance, HR and admin portals only from managed machines.', tone: 'move' },
+          { when: 'CA005', what: '**Risk-based (Entra ID P2):** block or step up on high sign-in risk; secure password change on high user risk.', tone: 'move' },
+          { when: 'CA006', what: '**Block device code flow** and other authentication flows nobody uses. Cheap, and it stops device code phishing.', tone: 'leave' },
+          { when: 'CA007', what: '**Protect security info registration:** registering MFA methods only from trusted locations or compliant devices, so an attacker with a password can’t enrol their own phone.', tone: 'key' },
+          { when: 'CA008', what: '**Guests:** require MFA (accepting the home tenant’s MFA through cross-tenant settings) and limit what they can reach.', tone: 'key' },
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'warn',
+        title: 'Break-glass: exclude, then watch',
+        text: 'Every policy should exclude two **emergency access accounts**: cloud-only, long random passwords or FIDO2 keys kept in a safe, not tied to any one person, used only when CA or MFA itself is broken. Alert on every single sign-in. The one exception you add to every policy must be the most watched account in the tenant.',
+      },
+      { t: 'h', text: 'Rolling out without locking out' },
+      {
+        t: 'timeline',
+        items: [
+          { when: 'Design', what: 'Name policies consistently (`CA001-AllUsers-AllApps-RequireMFA`), use groups for exclusions, and document why each exclusion exists and who owns it.', tone: 'key' },
+          { when: 'Report-only', what: 'Create the policy in **Report-only**. It is evaluated on every sign-in and logged, but nothing is enforced.', tone: 'auto' },
+          { when: 'Analyse', what: 'Check the **Conditional Access** tab in sign-in logs and the insights workbook: who would have been blocked or prompted? Use the **What If** tool for edge cases.', tone: 'auto' },
+          { when: 'Pilot', what: 'Switch on for a pilot group (the IAM team first), then widen to everyone.', tone: 'join' },
+          { when: 'Operate', what: 'Back up policies as code, review exclusions quarterly, and alert on policy changes in the audit log.', tone: 'join' },
+        ],
+      },
+      {
+        t: 'code',
+        lang: 'powershell',
+        title: 'Policy as code: create CA002 in report-only with Microsoft Graph',
+        code: `Connect-MgGraph -Scopes 'Policy.ReadWrite.ConditionalAccess','Policy.Read.All'
+
+$policy = @{
+  displayName   = 'CA002-AllUsers-AllApps-BlockLegacyAuth'
+  state         = 'enabledForReportingButNotEnforced'      # report-only
+  conditions    = @{
+    users          = @{ includeUsers = @('All'); excludeGroups = @('<break-glass-group-id>') }
+    applications   = @{ includeApplications = @('All') }
+    clientAppTypes = @('exchangeActiveSync', 'other')        # = legacy authentication
+  }
+  grantControls = @{ operator = 'OR'; builtInControls = @('block') }
+}
+New-MgIdentityConditionalAccessPolicy -BodyParameter $policy
+
+# Back up every policy as JSON
+Get-MgIdentityConditionalAccessPolicy -All | ForEach-Object {
+  $_ | ConvertTo-Json -Depth 10 | Out-File ".\\ca-backup\\$($_.DisplayName).json"
+}`,
+        notes: ['States are `enabled`, `disabled` and `enabledForReportingButNotEnforced`.', 'Tools like Microsoft365DSC or Terraform can manage the whole policy set from Git, with review before changes go live.'],
+      },
+      { t: 'h', text: 'Sessions, CAE and the leaver' },
+      {
+        t: 'p',
+        text: 'CA is checked when a token is issued, and access tokens normally live about an hour. **Continuous Access Evaluation (CAE)** closes that gap for supporting apps like Exchange, SharePoint, Teams and Graph: when an account is disabled, a password changes, sessions are revoked or the user moves to a disallowed network, the app rejects the token within minutes. In JML terms: CAE makes the leaver’s “disable, then revoke sessions” step take effect almost immediately in the apps that matter most.',
+      },
+      {
+        t: 'callout',
+        kind: 'field',
+        title: 'Licensing in one line',
+        text: 'Conditional Access needs **Entra ID P1** (included in Microsoft 365 E3/Business Premium). Risk-based conditions need **P2** (E5 or Entra ID Governance/Suite). Small tenants without P1 can turn on **security defaults**, a fixed, free baseline (MFA for everyone, legacy auth blocked), but they can’t customise it.',
+      },
+      { t: 'h', text: 'Troubleshooting cheat sheet' },
+      {
+        t: 'table',
+        head: ['Symptom', 'Meaning', 'Where to look'],
+        rows: [
+          ['AADSTS53003', 'Blocked by a Conditional Access policy', 'Sign-in log → Conditional Access tab shows which policy and why'],
+          ['AADSTS53000', 'Device must be compliant / managed', 'Intune compliance status of the device, device registration'],
+          ['AADSTS50076 / 50079', 'MFA required / user must register MFA', 'Authentication methods of the user, registration campaign'],
+          ['Scanner or app stopped sending mail', 'Legacy auth now blocked', 'Sign-in logs filtered on client app = other clients; move to OAuth or a connector'],
+          ['Policy “didn’t work”', 'User excluded, app not targeted, condition not met, or report-only', 'What If tool with the exact user, app and conditions'],
+          ['Everyone locked out', 'A block or unmet grant on all users without exclusions', 'Break-glass account, then fix the policy'],
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'norway',
+        title: 'Why auditors care',
+        text: 'NSM’s grunnprinsipper ask for strong authentication, especially for privileged and remote access, and NIS2 lists MFA as a baseline measure. A documented CA policy set with sign-in logs is the evidence that those controls exist and are enforced.',
+      },
+    ],
+    quiz: [
+      {
+        q: 'Two policies apply: one requires MFA, the other blocks. What happens?',
+        options: ['MFA, then access', 'Block', 'Whichever policy was created first wins', 'The user chooses'],
+        answer: 1,
+        explain: 'All applicable policies are combined and block always wins.',
+      },
+      {
+        q: 'A user is in the included group “All users” and in the excluded group “Break-glass”. Does the policy apply?',
+        options: ['Yes, inclusion wins', 'No, exclusion wins', 'Only for admin portals', 'Only in report-only'],
+        answer: 1,
+        explain: 'Exclusions always take precedence over inclusions.',
+      },
+      {
+        q: 'You enable “Require MFA for all users”. A printer that sends email with SMTP AUTH stops working. Why?',
+        options: ['The printer is too old for TLS', 'Legacy protocols can’t perform MFA, so the requirement can’t be met', 'SMTP is blocked by Exchange', 'The printer isn’t licensed'],
+        answer: 1,
+        explain: 'Basic-auth protocols have no way to show an MFA prompt. Move the device to OAuth, an SMTP relay or a connector, rather than excluding it.',
+      },
+      {
+        q: 'What is the safest way to introduce a new policy that targets all users?',
+        options: ['Turn it on Friday evening', 'Create it in Report-only, analyse sign-in logs and What If, pilot, then enable', 'Test it on the CEO first', 'Exclude all admins permanently'],
+        answer: 1,
+        explain: 'Report-only shows the impact without enforcing anything. Pilot groups catch the rest.',
+      },
+      {
+        q: 'Which policy best protects admin accounts from phishing?',
+        options: ['Require MFA (any method)', 'Require phishing-resistant MFA through an authentication strength', 'Block legacy auth', 'Require a password change every 30 days'],
+        answer: 1,
+        explain: 'Push and OTP codes can be phished or fatigue-bombed. FIDO2 keys, passkeys and Windows Hello are bound to the real site.',
+      },
+    ],
+  },
+  {
     slug: 'privileged',
     title: 'Privileged access',
     tagline: 'Admin rights are the crown jewels. Treat them that way.',

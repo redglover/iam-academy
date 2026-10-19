@@ -38,6 +38,11 @@ const SHEET: { title: string; tone: string; items: string[] }[] = [
     items: ['IdP is the client, the app hosts /scim/v2', 'POST = joiner, PATCH = mover, active:false = leaver', 'Check the matching attribute before go-live', 'Initial cycle, then incremental ~40 min', 'Provision on demand to debug', 'Quarantine = most requests failing'],
   },
   {
+    title: 'Conditional Access',
+    tone: 'border-leave',
+    items: ['All applicable policies combine, no ordering', 'Exclusions beat inclusions, block wins', 'Every grant from every policy must be met', 'Baseline: MFA all, block legacy, phishing-resistant admins', 'Exclude and monitor 2 break-glass accounts', 'Report-only → What If → pilot → on'],
+  },
+  {
     title: 'Principles',
     tone: 'border-key',
     items: ['Least privilege and need-to-know', 'Separation of duties', 'Zero trust: verify every request', 'Every account and group has an owner', 'No standing admin rights (PIM)'],

@@ -5,6 +5,15 @@ export interface Term {
 }
 
 export const GLOSSARY: Term[] = [
+  { term: 'Named location', def: 'IP ranges or countries defined in Entra ID and used as a Conditional Access condition, e.g. the office as a trusted location.', module: 'ca' },
+  { term: 'Authentication strength', def: 'A Conditional Access grant control that requires specific methods, e.g. phishing-resistant MFA (FIDO2, passkeys, Windows Hello).', module: 'ca' },
+  { term: 'Report-only', def: 'Conditional Access policy state that evaluates and logs the result of every sign-in without enforcing it.', module: 'ca' },
+  { term: 'What If tool', def: 'Entra ID tool that shows which Conditional Access policies would apply to a given user, app and set of conditions.', module: 'ca' },
+  { term: 'CAE', def: 'Continuous Access Evaluation: apps reject tokens within minutes of critical events like account disable or session revocation.', module: 'ca' },
+  { term: 'Security defaults', def: 'Free, fixed Entra ID baseline (MFA for all, legacy auth blocked) for tenants without Conditional Access licences.', module: 'ca' },
+  { term: 'Sign-in risk', def: 'Entra ID Protection’s estimate that a given sign-in isn’t from the account owner (e.g. impossible travel, anonymous IP).', module: 'ca' },
+  { term: 'User risk', def: 'Entra ID Protection’s estimate that an account is compromised (e.g. leaked credentials).', module: 'ca' },
+  { term: 'Compliant device', def: 'A device enrolled in Intune that meets the organization’s compliance policies. A common Conditional Access grant control.', module: 'ca' },
   { term: 'SCIM 2.0', def: 'System for Cross-domain Identity Management (RFC 7643/7644). REST API and JSON schema for provisioning users and groups into apps.', module: 'scim' },
   { term: 'Provisioning cycle', def: 'One run of the Entra provisioning service: initial (everything in scope) or incremental (only changes, about every 40 minutes).', module: 'scim' },
   { term: 'Matching attribute', def: 'The attribute used to find an existing user in the target app before creating one, by default userName = UPN.', module: 'scim' },
