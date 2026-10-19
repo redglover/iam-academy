@@ -4,7 +4,7 @@ An interactive site for learning **Identity & Access Management** by doing. You 
 
 ## What's inside
 
-**Ten modules**, each ending with a quiz:
+**Eleven modules**, each ending with a quiz:
 
 1. Identity, accounts and access
 2. The principles that never change (least privilege, SoD, zero trust, creep, orphans)
@@ -13,11 +13,12 @@ An interactive site for learning **Identity & Access Management** by doing. You 
 5. Automating IAM (event-driven vs. sync, SCIM, Microsoft Graph + PowerShell, Lifecycle Workflows)
 6. OAuth 2.0 and OpenID Connect (flows, tokens, PKCE, Entra app registrations, consent phishing)
 7. SAML single sign-on (assertions, Entra enterprise app setup, certificates, troubleshooting)
-8. Governance: access reviews, SoD, KPIs
-9. Privileged access (PIM, JIT, break-glass, non-human identities)
-10. Compliance and the Norwegian context (GDPR, NSM, ISO 27001, NIS2)
+8. SCIM provisioning (schema, PATCH, Entra provisioning cycles, matching, scoping, quarantine)
+9. Governance: access reviews, SoD, KPIs
+10. Privileged access (PIM, JIT, break-glass, non-human identities)
+11. Compliance and the Norwegian context (GDPR, NSM, ISO 27001, NIS2)
 
-**Seven labs and a playground:**
+**Eight labs and a playground:**
 
 - **JML simulator**: fire HR events in *manual* or *automated* mode, watch the audit log and the auditor's findings
 - **Automation pipeline builder**: assemble a joiner/leaver runbook, get it reviewed, read the generated PowerShell
@@ -25,6 +26,7 @@ An interactive site for learning **Identity & Access Management** by doing. You 
 - **OAuth playground**: register an app in your own Entra tenant, sign in for real (auth code + PKCE, no backend), and see your decoded ID and access tokens plus a Graph `/me` call
 - **SAML flow simulator**: SP- and IdP-initiated sign-in with the SP's validation checks as switches (forged, replayed and redirected assertions, certificate expiry)
 - **SAML inspector**: decode a captured SAMLResponse/SAMLRequest and check audience, recipient, validity window, signature and certificate thumbprint
+- **SCIM lab**: an in-browser SCIM 2.0 server. Run Entra-style provisioning cycles (joiner, mover, leaver, unassign, rename, expired token) and inspect every request, or send your own in the console
 - **RBAC lab**: fix business roles, remove SoD conflicts, watch privilege creep build up
 - **Access review game**: 60 seconds, 12 lines, catch the risky ones
 
@@ -55,6 +57,8 @@ Vite, React 18, TypeScript, Tailwind CSS, framer-motion, lucide-react. The simul
 - `src/features/jml-sim/engine.ts`: JML plans, state transitions, audit findings
 - `src/features/automation/pipeline.ts`: runbook blocks, validator, script generator
 - `src/features/rbac-lab/sod.ts`: separation-of-duties rules
+- `src/features/oauth/`, `src/features/saml/`: protocol simulators, PKCE/JWT helpers, SAML decoder
+- `src/features/scim/server.ts`: in-memory SCIM 2.0 server (filters, PATCH, groups); `provisioning.ts`: Entra-style provisioning cycles
 
 Course content lives in `src/data/` as typed data, so adding a module means adding an object to `modules.ts`.
 

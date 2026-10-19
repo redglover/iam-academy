@@ -22,6 +22,14 @@ export const INTERVIEW: { q: string; a: string }[] = [
     a: 'When the app only supports SAML, which is common for enterprise SaaS. For anything new, especially SPAs, mobile apps or anything that calls APIs, OIDC/OAuth is the better choice. Either way, pair SSO with SCIM for provisioning and deprovisioning.',
   },
   {
+    q: 'An app has SAML SSO. Why would you also want SCIM?',
+    a: 'SSO only controls sign-in. SCIM creates the account before day one, updates it when the person changes jobs, and deactivates it when they leave or are unassigned. Without it, leavers keep app accounts, sessions and API tokens, and someone has to clean up by hand. Ask whether the app supports SCIM and what it does on active:false.',
+  },
+  {
+    q: 'You’re connecting an app with existing users to Entra provisioning. What do you check first?',
+    a: 'The matching attribute: whether the app’s existing users can be matched 1:1 to Entra users (e.g. userName = UPN), otherwise the first cycle creates duplicates. Then the attribute mappings the app supports, scope (start with a pilot group), what the app does on deactivation, token lifetime and owner, and failure notifications. Test with Provision on demand before switching it on.',
+  },
+  {
     q: 'Walk me through what happens when someone leaves the company.',
     a: 'HR sets the end date → IGA or Lifecycle Workflows trigger at the end date (immediately for hostile terminations) → disable the account → revoke sessions → remove groups and roles, which SCIM-deprovisions apps → convert the mailbox to shared and delegate to the manager → remove licences → notify the manager about hardware → log everything → delete after the retention period.',
   },

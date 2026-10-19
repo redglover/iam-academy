@@ -48,6 +48,7 @@ const SKILLS: { skill: string; where: string; slug: string }[] = [
   { skill: 'Automating with PowerShell, Graph API and SCIM', where: 'Automating IAM', slug: 'automation' },
   { skill: 'OAuth 2.0 / OpenID Connect and app registrations', where: 'OAuth 2.0 and OpenID Connect', slug: 'oauth' },
   { skill: 'SAML SSO: setup, certificates and troubleshooting', where: 'SAML single sign-on', slug: 'saml' },
+  { skill: 'SCIM provisioning and Entra attribute mappings', where: 'SCIM provisioning', slug: 'scim' },
   { skill: 'Role design (RBAC/ABAC) and SoD', where: 'Roles, attributes and groups', slug: 'access-models' },
   { skill: 'Access reviews and governance reporting', where: 'Governance', slug: 'governance' },
   { skill: 'Entra ID, Conditional Access, PIM', where: 'Privileged access', slug: 'privileged' },
@@ -68,7 +69,7 @@ export function Home() {
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg text-muted sm:text-xl">
             Hire, move and terminate people at Fjordtech AS, a fictional Norwegian company, and see what identity and access management does at every
-            step. Ten short modules, seven hands-on labs, and a real sign-in playground. No sign-up.
+            step. Eleven short modules, eight hands-on labs, and a real sign-in playground. No sign-up.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to={`/learn/${nextModule.slug}`} className="btn btn-key px-5 py-3 text-lg">

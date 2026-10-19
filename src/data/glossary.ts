@@ -5,6 +5,13 @@ export interface Term {
 }
 
 export const GLOSSARY: Term[] = [
+  { term: 'SCIM 2.0', def: 'System for Cross-domain Identity Management (RFC 7643/7644). REST API and JSON schema for provisioning users and groups into apps.', module: 'scim' },
+  { term: 'Provisioning cycle', def: 'One run of the Entra provisioning service: initial (everything in scope) or incremental (only changes, about every 40 minutes).', module: 'scim' },
+  { term: 'Matching attribute', def: 'The attribute used to find an existing user in the target app before creating one, by default userName = UPN.', module: 'scim' },
+  { term: 'Attribute mapping', def: 'Rule that decides which source attribute (or expression) fills which target attribute during provisioning.', module: 'scim' },
+  { term: 'Scoping filter', def: 'Condition that limits which users are provisioned, e.g. department EQUALS Sales.', module: 'scim' },
+  { term: 'Soft delete', def: 'Deactivating an account (SCIM active = false) instead of deleting it, so data and audit history remain.', module: 'scim' },
+  { term: 'Quarantine', def: 'State an Entra provisioning job enters when most requests fail. It retries less often until fixed.', module: 'scim' },
   { term: 'SAML', def: 'Security Assertion Markup Language 2.0. XML-based standard for web single sign-on between an identity provider and a service provider.', module: 'saml' },
   { term: 'Assertion', def: 'The signed XML statement a SAML IdP issues about a user: who, for which app, valid when, with which attributes.', module: 'saml' },
   { term: 'Identity provider (IdP)', def: 'The system that authenticates users and issues assertions or tokens, e.g. Entra ID.', module: 'saml' },

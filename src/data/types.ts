@@ -1,6 +1,6 @@
 export type Tone = 'key' | 'join' | 'move' | 'leave' | 'auto'
 
-export type LabId = 'jml' | 'pipeline' | 'rbac' | 'review' | 'oauth' | 'saml' | 'saml-inspector'
+export type LabId = 'jml' | 'pipeline' | 'rbac' | 'review' | 'oauth' | 'saml' | 'saml-inspector' | 'scim'
 export type DiagramId = 'jml-flow' | 'automation-arch' | 'lifecycle' | 'oauth-roles'
 
 export type Block =

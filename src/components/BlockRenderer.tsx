@@ -11,6 +11,7 @@ const LABS: Record<LabId, React.LazyExoticComponent<() => JSX.Element>> = {
   pipeline: lazy(() => import('../features/automation/PipelineBuilder').then((m) => ({ default: m.PipelineBuilder }))),
   rbac: lazy(() => import('../features/rbac-lab/RbacLab').then((m) => ({ default: m.RbacLab }))),
   review: lazy(() => import('../features/review/ReviewGame').then((m) => ({ default: m.ReviewGame }))),
+  scim: lazy(() => import('../features/scim/ScimLab').then((m) => ({ default: m.ScimLab }))),
   saml: lazy(() => import('../features/saml/SamlSimulator').then((m) => ({ default: m.SamlSimulator }))),
   'saml-inspector': lazy(() => import('../features/saml/SamlInspector').then((m) => ({ default: m.SamlInspector }))),
   oauth: lazy(() => import('../features/oauth/OAuthSimulator').then((m) => ({ default: m.OAuthSimulator }))),

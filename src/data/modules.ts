@@ -830,6 +830,193 @@ Update-MgUser -UserId 'kari.lunde@fjordtech.no' -AccountEnabled:$false`,
     ],
   },
   {
+    slug: 'scim',
+    title: 'SCIM provisioning',
+    tagline: 'The standard API that creates, updates and removes accounts in apps, and closes the gap SSO leaves open.',
+    minutes: 18,
+    tone: 'join',
+    blocks: [
+      {
+        t: 'p',
+        text: 'SSO (SAML or OIDC) decides how people **sign in** to an app. It doesn’t create their account there, update it when they change jobs, or remove it when they leave. That’s **provisioning**, and **SCIM 2.0** (System for Cross-domain Identity Management) is the standard way to do it. In JML terms: SSO is the door, SCIM is the list of people who have a key.',
+      },
+      {
+        t: 'compare',
+        items: [
+          { title: 'Without SCIM', text: 'Accounts appear on first sign-in (JIT) or are created by hand. Nobody removes them. Leavers keep app accounts, API tokens and data. Department changes never reach the app.', tone: 'leave' },
+          { title: 'With SCIM', text: 'Entra pushes changes within about 40 minutes: create on assignment, update on mover, deactivate on leaver or unassignment. One place to manage it, with logs for every change.', tone: 'join' },
+        ],
+      },
+      { t: 'h', text: 'Two RFCs, one REST API' },
+      {
+        t: 'p',
+        text: '**RFC 7643** defines the *schema*: what a User and a Group look like in JSON. **RFC 7644** defines the *protocol*: REST endpoints, filtering, PATCH and errors. The identity system is the **client** and the app is the **service provider**, which exposes the SCIM endpoint. Note the direction: the IdP calls the app.',
+      },
+      {
+        t: 'table',
+        head: ['Request', 'Does', 'Used for'],
+        rows: [
+          ['`GET /ServiceProviderConfig`', 'What the app supports: PATCH, filtering, bulk, auth', 'Discovery'],
+          ['`GET /Users?filter=userName eq "…"`', 'Find a user by the matching attribute', 'Matching before create'],
+          ['`POST /Users`', 'Create a user', 'Joiner'],
+          ['`PATCH /Users/{id}`', 'Change specific attributes', 'Mover, leaver (`active: false`)'],
+          ['`PUT /Users/{id}`', 'Replace the whole user', 'Rare. PATCH is preferred'],
+          ['`DELETE /Users/{id}`', 'Delete the user', 'Hard delete, after retention'],
+          ['`POST /Groups`, `PATCH /Groups/{id}`', 'Create groups, add or remove members', 'Group push, app roles'],
+        ],
+      },
+      {
+        t: 'code',
+        lang: 'json',
+        title: 'A SCIM user with the enterprise extension',
+        code: `{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User",
+              "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],
+  "id": "u-0001",                          // assigned by the app
+  "externalId": "ingrid.haugen",           // assigned by the IdP
+  "userName": "ingrid.haugen@fjordtech.no",
+  "active": true,
+  "name": { "givenName": "Ingrid", "familyName": "Haugen" },
+  "displayName": "Ingrid Haugen",
+  "emails": [{ "type": "work", "primary": true, "value": "ingrid.haugen@fjordtech.no" }],
+  "title": "Account Executive",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "employeeNumber": "E10421",
+    "department": "Sales",
+    "manager": { "value": "u-0002" }
+  },
+  "meta": { "resourceType": "User", "created": "2026-10-19T08:00:00Z", "location": ".../Users/u-0001" }
+}`,
+        notes: ['`id` belongs to the app, `externalId` to the client. Both sides can find the record again.', 'Multi-valued attributes like `emails` are arrays of objects with a `type`, which is why PATCH paths look like `emails[type eq "work"].value`.'],
+      },
+      { t: 'h', text: 'PATCH: how changes travel' },
+      {
+        t: 'code',
+        lang: 'http',
+        title: 'Mover and leaver in one request each',
+        code: `PATCH /scim/v2/Users/u-0001
+Content-Type: application/scim+json
+
+{ "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [
+    { "op": "replace", "path": "title", "value": "Financial Controller" },
+    { "op": "replace", "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department", "value": "Finance" }
+  ] }
+
+PATCH /scim/v2/Users/u-0001
+{ "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [ { "op": "replace", "path": "active", "value": false } ] }`,
+        notes: ['Ops are `add`, `replace` and `remove`. A leaver is usually a **soft delete** (`active: false`): the account is blocked but its data and audit history remain.'],
+      },
+      { t: 'h', text: 'Try it: run Fjordtech’s provisioning' },
+      {
+        t: 'p',
+        text: 'Run an initial cycle, then make JML changes on the Entra side: transfer Ingrid, disable Kari, hire Ola, unassign someone, rename Kari. Run incremental cycles and open the log to see every SCIM request and response. Then switch to the console and send your own requests to the same server.',
+      },
+      { t: 'lab', lab: 'scim' },
+      { t: 'h', text: 'How the Entra provisioning service works' },
+      {
+        t: 'timeline',
+        items: [
+          { when: 'Initial cycle', what: 'Reads every user and group in scope, finds each in the app by the **matching attribute** (default: `userName` ← UPN), and creates or updates. Can take hours in big tenants.', tone: 'join' },
+          { when: 'Incremental', what: 'About every **40 minutes**, processes only what changed since the last watermark. Unchanged users generate no traffic.', tone: 'join' },
+          { when: 'Scoping', what: '“Sync only assigned users and groups” (the default) plus optional **scoping filters** such as `department EQUALS Sales`. Leaving scope = soft delete in the app.', tone: 'move' },
+          { when: 'Mappings', what: '**Attribute mappings** decide which Entra attribute fills which SCIM attribute, with expressions like `Switch()`, `Join()` or `NormalizeDiacritics()` for æøå.', tone: 'move' },
+          { when: 'Failures', what: 'Per-user errors show in the **provisioning logs**. If most requests fail (wrong token, app down), the job goes into **quarantine** and retries less often until fixed.', tone: 'leave' },
+          { when: 'On demand', what: '**Provision on demand** runs one user immediately and shows each step. Your best debugging tool.', tone: 'auto' },
+        ],
+      },
+      {
+        t: 'timeline',
+        items: [
+          { when: '1. Add the app', what: 'Enterprise applications → the app from the gallery (many have SCIM pre-built) or your own non-gallery app.', tone: 'key' },
+          { when: '2. Connect', what: 'Provisioning → Mode: **Automatic**. Enter the **Tenant URL** (the app’s SCIM base URL) and **Secret Token** from the app’s admin settings. Click **Test Connection**.', tone: 'key' },
+          { when: '3. Map', what: 'Review attribute mappings: confirm the matching attribute, remove what the app doesn’t support, add what it needs (department, employee number, manager).', tone: 'move' },
+          { when: '4. Scope', what: 'Assign users or groups, or add scoping filters. Start with a small pilot group.', tone: 'move' },
+          { when: '5. Test, then start', what: 'Use Provision on demand for one user, check the app, then set Provisioning Status **On**. Watch the provisioning logs and set up a notification email for failures.', tone: 'join' },
+        ],
+      },
+      {
+        t: 'callout',
+        kind: 'warn',
+        title: 'The matching attribute decides whether you get duplicates',
+        text: 'If the app already has users (created by hand or by JIT) and the matching values don’t line up, for example the app uses email and Entra sends UPN, the first cycle creates **duplicates** instead of linking. Before switching on, export the app’s users and check that the matching attribute matches 1:1. Prefer immutable values like an employee ID over names.',
+      },
+      { t: 'h', text: 'SCIM the other way: from HR into Entra' },
+      {
+        t: 'p',
+        text: 'SCIM is not only outbound. Entra’s **API-driven inbound provisioning** accepts SCIM bulk requests (`POST /bulkUpload`) from any HR system or script, and creates and updates users in Entra ID and on-premises AD. That is how the joiner in the JML module can start from HR without a special connector: the HR export is turned into SCIM, Entra creates the user, and outbound SCIM provisions the apps. One standard, end to end.',
+      },
+      { t: 'h', text: 'Troubleshooting cheat sheet' },
+      {
+        t: 'table',
+        head: ['Symptom', 'Likely cause', 'Fix'],
+        rows: [
+          ['Test Connection fails / 401', 'Wrong Tenant URL or expired secret token', 'Generate a new token in the app, check the URL ends in `/scim/v2` (or as documented)'],
+          ['Job in quarantine', 'Most requests failing for a long time', 'Fix the cause, then restart provisioning (clear state if needed)'],
+          ['409 Conflict on create', 'User exists in the app but didn’t match', 'Align the matching attribute, or fix the existing user’s value'],
+          ['Duplicates in the app', 'Matching attribute differs between systems', 'Clean up duplicates, change the matching attribute, restart'],
+          ['400 invalid attribute', 'Mapping sends something the app doesn’t support', 'Remove or fix the mapping. Check the app’s schema'],
+          ['User skipped', 'Not in scope: not assigned, or excluded by a scoping filter', 'Check assignment and scoping. Provision on demand shows why'],
+          ['Leaver still active in the app', 'App ignores `active: false`, or provisioning is paused', 'Verify in the provisioning logs, test the app’s behaviour, add monitoring'],
+        ],
+      },
+      {
+        t: 'code',
+        lang: 'powershell',
+        title: 'Test an app’s SCIM endpoint yourself',
+        code: `$base    = 'https://fjordtech.my.salesforce.com/scim/v2'
+$headers = @{ Authorization = "Bearer $env:SCIM_TOKEN" }   # never hard-code the token
+
+Invoke-RestMethod "$base/ServiceProviderConfig" -Headers $headers
+Invoke-RestMethod "$base/Users?filter=userName eq \`"ingrid.haugen@fjordtech.no\`"" -Headers $headers
+
+$body = @{ schemas = @('urn:ietf:params:scim:api:messages:2.0:PatchOp')
+           Operations = @(@{ op = 'replace'; path = 'active'; value = $false }) } | ConvertTo-Json -Depth 5
+Invoke-RestMethod "$base/Users/u-0001" -Method Patch -Headers $headers -Body $body -ContentType 'application/scim+json'`,
+        notes: ['Microsoft also publishes a SCIM validator that runs the same requests Entra will send against your endpoint. Use it before connecting a custom app.'],
+      },
+      {
+        t: 'callout',
+        kind: 'field',
+        title: 'Things to ask before you connect an app',
+        text: 'Does the app support SCIM, and on which licence tier (it’s often “Enterprise only”)? What does it do on `active: false`: block sign-in, free the licence, delete data? Does it support Groups? What’s its matching field? Is the token long-lived, and who rotates it? The answers decide whether your leaver process actually works.',
+      },
+    ],
+    quiz: [
+      {
+        q: 'In SCIM, who calls whom?',
+        options: ['The app calls Entra to fetch users', 'Entra (the client) calls the app’s SCIM endpoint (the service provider)', 'The browser posts users to the app', 'HR calls the app directly'],
+        answer: 1,
+        explain: 'The identity system pushes changes to the app’s SCIM API. That’s why you configure a Tenant URL and a token from the app in Entra.',
+      },
+      {
+        q: 'How does Entra normally handle a leaver in a SCIM app?',
+        options: ['DELETE /Users/{id} immediately', 'PATCH with active = false (soft delete)', 'Nothing, SSO handles it', 'It emails the app owner'],
+        answer: 1,
+        explain: 'Soft delete blocks the account while keeping data and history. Hard deletion can follow later, according to the app’s retention policy.',
+      },
+      {
+        q: 'You turn on provisioning for an app that already has 500 users, and get 500 duplicates. Why?',
+        options: ['The token expired', 'The matching attribute values didn’t line up, so Entra created new users instead of linking', 'Incremental cycles are too fast', 'The app doesn’t support PATCH'],
+        answer: 1,
+        explain: 'Before the first cycle, check that the matching attribute (e.g. userName = UPN) matches the existing users in the app.',
+      },
+      {
+        q: 'Ingrid moves from Sales to Finance. What does SCIM send?',
+        options: ['POST /Users with a new account', 'PATCH /Users/{id} replacing department (and title)', 'DELETE then POST', 'Nothing until the next access review'],
+        answer: 1,
+        explain: 'Changes are PATCHed onto the existing account. The app can then adjust her roles based on the new department.',
+      },
+      {
+        q: 'What does an incremental provisioning cycle process?',
+        options: ['Every user in the tenant', 'Only objects that changed since the last cycle', 'Only new users', 'Only groups'],
+        answer: 1,
+        explain: 'Incremental cycles use a watermark, so unchanged users produce no SCIM traffic. That is why they can run every ~40 minutes.',
+      },
+    ],
+  },
+  {
     slug: 'governance',
     title: 'Governance: reviews, SoD and proof',
     tagline: 'Automation gives access. Governance checks that it’s still right.',

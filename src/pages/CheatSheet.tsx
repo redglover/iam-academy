@@ -33,6 +33,11 @@ const SHEET: { title: string; tone: string; items: string[] }[] = [
     items: ['IdP signs, SP verifies with IdP certificate', 'Entity ID = Identifier, ACS = Reply URL', 'SP checks: signature, audience, recipient, time, InResponseTo, one-time use', 'Track signing certificate expiry (3 years)', 'SAML signs in, SCIM deprovisions', 'Debug with SAML-tracer'],
   },
   {
+    title: 'SCIM',
+    tone: 'border-join',
+    items: ['IdP is the client, the app hosts /scim/v2', 'POST = joiner, PATCH = mover, active:false = leaver', 'Check the matching attribute before go-live', 'Initial cycle, then incremental ~40 min', 'Provision on demand to debug', 'Quarantine = most requests failing'],
+  },
+  {
     title: 'Principles',
     tone: 'border-key',
     items: ['Least privilege and need-to-know', 'Separation of duties', 'Zero trust: verify every request', 'Every account and group has an owner', 'No standing admin rights (PIM)'],
