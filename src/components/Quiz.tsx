@@ -5,24 +5,40 @@ import type { Question } from '../data/types'
 import { useProgress } from '../features/progress/progress'
 import { celebrate } from '../lib/confetti'
 
+// Fisher-Yates shuffle of option indices, so the correct answer is not always in the same slot.
+export function shuffledOrder(length: number): number[] {
+  const order = Array.from({ length }, (_, n) => n)
+  for (let n = length - 1; n > 0; n--) {
+    const k = Math.floor(Math.random() * (n + 1))
+    ;[order[n], order[k]] = [order[k], order[n]]
+  }
+  return order
+}
+
 export function Quiz({ slug, questions, onDone }: { slug: string; questions: Question[]; onDone: () => void }) {
   const { recordQuiz } = useProgress()
   const [i, setI] = useState(0)
   const [picked, setPicked] = useState<number | null>(null)
   const [correct, setCorrect] = useState(0)
   const [finished, setFinished] = useState(false)
+  // order[slot] is the index into q.options shown in that slot; reshuffled every time a question is shown.
+  const [order, setOrder] = useState(() => shuffledOrder(questions[0]?.options.length ?? 0))
 
   const q = questions[i]
 
-  const choose = (n: number) => {
+  // picked and the slot comparisons below use display slots; the answer is remapped from content order.
+  const answerSlot = order.indexOf(q.answer)
+
+  const choose = (slot: number) => {
     if (picked !== null) return
-    setPicked(n)
-    if (n === q.answer) setCorrect((c) => c + 1)
+    setPicked(slot)
+    if (slot === answerSlot) setCorrect((c) => c + 1)
   }
 
   const next = () => {
     if (i + 1 < questions.length) {
       setI(i + 1)
+      setOrder(shuffledOrder(questions[i + 1].options.length))
       setPicked(null)
       return
     }
@@ -36,6 +52,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
 
   const restart = () => {
     setI(0)
+    setOrder(shuffledOrder(questions[0].options.length))
     setPicked(null)
     setCorrect(0)
     setFinished(false)
@@ -72,14 +89,14 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
         <m.div key={i} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.18 }}>
           <h3 className="mt-1 text-xl font-semibold sm:text-2xl">{q.q}</h3>
           <div className="mt-4 grid gap-2" role="radiogroup" aria-label="Answers">
-            {q.options.map((o, n) => {
-              const isAnswer = n === q.answer
+            {order.map((o, n) => {
+              const isAnswer = n === answerSlot
               const isPicked = n === picked
               const state =
                 picked === null ? 'border-line hover:border-key hover:bg-key/5' : isAnswer ? 'border-join bg-join/10' : isPicked ? 'border-leave bg-leave/10' : 'border-line opacity-60'
               return (
                 <button
-                  key={n}
+                  key={o}
                   role="radio"
                   aria-checked={isPicked}
                   disabled={picked !== null}
@@ -89,14 +106,14 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-current/30 font-display text-sm font-bold">
                     {picked !== null && isAnswer ? <Check size={16} className="text-join" /> : picked !== null && isPicked ? <X size={16} className="text-leave" /> : String.fromCharCode(65 + n)}
                   </span>
-                  <span>{o}</span>
+                  <span>{q.options[o]}</span>
                 </button>
               )
             })}
           </div>
           {picked !== null && (
             <div className="mt-4 rounded-xl bg-ink/[.04] p-4" aria-live="polite">
-              <p className="font-display font-semibold">{picked === q.answer ? 'Correct.' : 'Not quite.'}</p>
+              <p className="font-display font-semibold">{picked === answerSlot ? 'Correct.' : 'Not quite.'}</p>
               <p className="mt-1">{q.explain}</p>
               <button className="btn btn-key mt-4" onClick={next} autoFocus>
                 {i + 1 < questions.length ? 'Next question' : 'See result'}

@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-patch-minor:
+        update-types: [patch, minor]
+    ignore:
+      # Tailwind 4 and newer Vite majors need a different setup; upgrade those by hand.
+      - dependency-name: tailwindcss
+        update-types: [version-update:semver-major]
+      - dependency-name: vite
+        update-types: [version-update:semver-major]
