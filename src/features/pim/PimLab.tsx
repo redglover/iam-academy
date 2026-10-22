@@ -31,12 +31,13 @@ function ActivateTab() {
   const errors = validateActivation(state, { principal: me, role, hours, justification, ticket, method })
   const pending = state.requests.filter((r) => r.status === 'pending')
 
-  useEffect(() => {
-    const first = state.assignments.find((a) => a.principal === me && a.type === 'eligible')
+  const switchPerson = (id: typeof me) => {
+    setMe(id)
+    const first = state.assignments.find((a) => a.principal === id && a.type === 'eligible')
     if (first) setRole(first.role)
     setMethod('authenticator')
     setMessage(null)
-  }, [me]) // only when switching person
+  }
 
   useEffect(() => {
     if (state.requests.some((r) => r.status === 'expired' && r.approver)) award('pim-activator')
@@ -85,7 +86,7 @@ function ActivateTab() {
               {(['erik', 'nora'] as const).map((id) => {
                 const p = person(id)
                 return (
-                  <button key={id} onClick={() => setMe(id)} aria-pressed={me === id} className={`chip py-1.5 text-sm ${me === id ? 'border-ink bg-ink text-paper' : 'border-line bg-paper'}`}>
+                  <button key={id} onClick={() => switchPerson(id)} aria-pressed={me === id} className={`chip py-1.5 text-sm ${me === id ? 'border-ink bg-ink text-paper' : 'border-line bg-paper'}`}>
                     <span aria-hidden>{p.emoji}</span> {p.name}, {p.title}
                   </button>
                 )
