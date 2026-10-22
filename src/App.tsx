@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
-import { MODULE_INDEX } from './data/moduleIndex'
 import { BADGES, ProgressProvider, levelFor, useProgress } from './features/progress/progress'
 import { useTheme } from './lib/theme'
 import { Home } from './pages/Home'
@@ -149,7 +148,7 @@ function Shell() {
 export default function App() {
   return (
     <LazyMotion features={domAnimation} strict>
-      <ProgressProvider totalModules={MODULE_INDEX.length}>
+      <ProgressProvider>
         <HashRouter>
           <ScrollToTop />
           <Shell />

@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { MODULE_INDEX } from '../../data/moduleIndex'
 import { load, save } from '../../lib/storage'
 
 export const BADGES = {
@@ -45,18 +46,27 @@ const KEY = 'iam-progress-v1'
 const empty: State = { xp: 0, completed: [], quizBest: {}, badges: [] }
 const ProgressContext = createContext<Ctx | null>(null)
 
-export function ProgressProvider({ children, totalModules }: { children: ReactNode; totalModules: number }) {
+// Only slugs that still exist count, so a renamed module's old slug can't stand in for the new one.
+export function hasGraduated(completed: string[], slugs: string[] = MODULE_INDEX.map((m) => m.slug)) {
+  return slugs.length > 0 && slugs.every((slug) => completed.includes(slug))
+}
+
+export function ProgressProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(() => ({ ...empty, ...load<State>(KEY, empty) }))
   const [lastBadge, setLastBadge] = useState<BadgeId | null>(null)
+  // Mirrors state.badges, but is updated synchronously by award() so repeat calls before a re-render are no-ops.
+  const badgesRef = useRef(state.badges)
 
   useEffect(() => save(KEY, state), [state])
+  useEffect(() => {
+    badgesRef.current = state.badges
+  }, [state.badges])
 
   const award = useCallback((b: BadgeId) => {
-    setState((s) => {
-      if (s.badges.includes(b)) return s
-      setLastBadge(b)
-      return { ...s, badges: [...s.badges, b], xp: s.xp + 50 }
-    })
+    if (badgesRef.current.includes(b)) return
+    badgesRef.current = [...badgesRef.current, b]
+    setLastBadge(b)
+    setState((s) => (s.badges.includes(b) ? s : { ...s, badges: [...s.badges, b], xp: s.xp + 50 }))
   }, [])
 
   const addXp = useCallback((n: number) => setState((s) => ({ ...s, xp: s.xp + n })), [])
@@ -73,8 +83,8 @@ export function ProgressProvider({ children, totalModules }: { children: ReactNo
   )
 
   useEffect(() => {
-    if (state.completed.length >= totalModules) award('graduate')
-  }, [state.completed.length, totalModules, award])
+    if (hasGraduated(state.completed)) award('graduate')
+  }, [state.completed, award])
 
   const recordQuiz = useCallback(
     (slug: string, correct: number, total: number) => {
@@ -96,7 +106,10 @@ export function ProgressProvider({ children, totalModules }: { children: ReactNo
       completeModule,
       recordQuiz,
       award,
-      reset: () => setState(empty),
+      reset: () => {
+        badgesRef.current = []
+        setState(empty)
+      },
       lastBadge,
       clearLastBadge: () => setLastBadge(null),
     }),
