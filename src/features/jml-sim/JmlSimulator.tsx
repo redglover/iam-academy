@@ -31,26 +31,28 @@ export function JmlSimulator() {
   const canHire = who.status === 'none'
   const canMove = who.status === 'active'
   const canLeave = who.status === 'active' || who.status === 'pre-hire'
-  const moveTargets = DEPARTMENTS.filter((d) => d !== who.department)
+  const moveTargets = useMemo(() => DEPARTMENTS.filter((d) => d !== who.department), [who.department])
 
   useEffect(() => {
     if (!moveTargets.includes(dept) && !canHire) setDept(moveTargets[0])
-  }, [who.department])
+  }, [moveTargets, dept, canHire])
 
   useEffect(() => {
     logEnd.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [shown, log.length])
 
-  // Achievements, evaluated when a run finishes.
+  // Achievements, evaluated once when a run finishes.
+  const last = log[log.length - 1]
+  const scored = useRef<typeof last>()
   useEffect(() => {
-    if (playing || !log.length) return
+    if (playing || !last || scored.current === last) return
+    scored.current = last
     addXp(10)
     if (issues.length >= 3 && log.some((l) => l.mode === 'manual')) award('jml-manual')
     const autoTypes = new Set(log.filter((l) => l.mode === 'automated').map((l) => l.event.type))
     if (autoTypes.size === 3 && log.every((l) => l.mode === 'automated') && issues.length === 0) award('jml-auto')
-  }, [playing, log.length])
+  }, [playing, last, log, issues.length, addXp, award])
 
-  const last = log[log.length - 1]
   const elapsed = last && !playing ? last.steps[last.steps.length - 1]?.at ?? 0 : null
 
   return (
