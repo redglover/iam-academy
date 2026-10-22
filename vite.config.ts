@@ -11,5 +11,10 @@ export default defineConfig({
     { name: 'csp-meta', apply: 'build', transformIndexHtml: { order: 'post', handler: injectCsp } },
   ],
   base: process.env.GITHUB_ACTIONS ? '/iam-academy/' : '/',
-  test: { environment: 'node' },
+  test: {
+    environment: 'node',
+    // UI smoke tests (*.test.tsx) need a DOM; engine tests stay in node.
+    environmentMatchGlobs: [['src/**/*.test.tsx', 'jsdom']],
+    setupFiles: ['src/test/setup.ts'],
+  },
 })
