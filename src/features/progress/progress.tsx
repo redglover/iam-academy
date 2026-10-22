@@ -106,7 +106,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       completeModule,
       recordQuiz,
       award,
-      reset: () => setState(empty),
+      reset: () => {
+        badgesRef.current = []
+        setState(empty)
+      },
       lastBadge,
       clearLastBadge: () => setLastBadge(null),
     }),
