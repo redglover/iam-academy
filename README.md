@@ -55,7 +55,7 @@ npm test          # engine unit tests + UI smoke tests (Vitest, jsdom)
 npm run build     # typecheck + production build
 ```
 
-Dependencies are pinned to exact versions (Tailwind CSS 3, Vite 5). Don't run `npm update` or `npm install <pkg>@latest`: Tailwind 4 and newer Vite versions need a different setup.
+Dependencies are pinned to exact versions, and major versions stay put (Tailwind CSS 3, Vite 5): Tailwind 4 and newer Vite versions need a different setup, so don't run `npm install <pkg>@latest`. Patch and minor releases, including security fixes, arrive as weekly Dependabot pull requests (`.github/dependabot.yml`), so there's no need to run `npm update` by hand.
 
 ## Stack
 
