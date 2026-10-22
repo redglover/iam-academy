@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { Lab } from '../components/BlockRenderer'
 import type { LabId } from '../data/types'
 

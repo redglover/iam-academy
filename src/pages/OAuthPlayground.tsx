@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { AlertTriangle, Check, Copy, Eye, EyeOff, KeyRound, Loader2, LogIn, ShieldCheck } from 'lucide-react'
 import { base64UrlEncode, createPkcePair, randomString } from '../features/oauth/pkce'
 import { buildAuthorizeUrl, explainError, getMe, redeemCode, validateIdToken, type IdTokenCheck, type OAuthError, type TokenResponse } from '../features/oauth/entra'
