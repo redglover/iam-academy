@@ -50,6 +50,7 @@ Paste the client ID (and tenant ID) into the playground. No client secret is nee
 ```bash
 npm ci            # installs the exact versions from package-lock.json
 npm run dev       # http://localhost:5173
+npm run lint      # ESLint (incl. react-hooks rules)
 npm test          # engine unit tests (Vitest)
 npm run build     # typecheck + production build
 ```
@@ -72,4 +73,4 @@ Course content lives in `src/data/` as typed data, so adding a module means addi
 
 ## Deploy
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which tests, builds and publishes to GitHub Pages. Enable it once under **Settings → Pages → Source: GitHub Actions**.
+Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes to GitHub Pages. Enable it once under **Settings → Pages → Source: GitHub Actions**.
