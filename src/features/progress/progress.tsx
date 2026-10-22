@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { MODULES } from '../../data/modules'
-import { load, save } from '../../lib/storage'
+import { load, remove, save } from '../../lib/storage'
 
 export const BADGES = {
   'first-quiz': { name: 'First steps', emoji: '🎓', how: 'Finish your first quiz' },
@@ -43,6 +43,8 @@ interface Ctx extends State {
 }
 
 const KEY = 'iam-progress-v1'
+// Labs that keep their own progress outside this context; reset() clears these too.
+export const CA_MISSIONS_KEY = 'iam-ca-missions'
 const empty: State = { xp: 0, completed: [], quizBest: {}, badges: [] }
 const ProgressContext = createContext<Ctx | null>(null)
 
@@ -112,6 +114,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       recordQuiz,
       award,
       reset: () => {
+        remove(CA_MISSIONS_KEY)
         badgesRef.current = []
         setState(empty)
       },

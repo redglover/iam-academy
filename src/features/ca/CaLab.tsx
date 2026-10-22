@@ -20,7 +20,7 @@ import {
 } from './model'
 import { describePolicy, evaluate, type Verdict } from './engine'
 import { MISSIONS, runMission } from './missions'
-import { useProgress } from '../progress/progress'
+import { CA_MISSIONS_KEY, useProgress } from '../progress/progress'
 import { Tabs } from '../../components/Tabs'
 import { load, save } from '../../lib/storage'
 import { celebrate } from '../../lib/confetti'
@@ -377,7 +377,7 @@ function Missions() {
   const [idx, setIdx] = useState(0)
   const mission = MISSIONS[idx]
   const [drafts, setDrafts] = useState<Record<string, Policy>>(() => Object.fromEntries(MISSIONS.map((m) => [m.id, m.start])))
-  const [done, setDone] = useState<string[]>(() => load<string[]>('iam-ca-missions', []))
+  const [done, setDone] = useState<string[]>(() => load<string[]>(CA_MISSIONS_KEY, []))
   const [showHint, setShowHint] = useState(false)
   const [revealed, setRevealed] = useState<string[]>([])
   const { award } = useProgress()
@@ -392,7 +392,7 @@ function Missions() {
     if (!allPass || done.includes(mission.id) || revealed.includes(mission.id)) return
     const next = [...done, mission.id]
     setDone(next)
-    save('iam-ca-missions', next)
+    save(CA_MISSIONS_KEY, next)
     celebrate()
     if (MISSIONS.every((m) => next.includes(m.id))) award('ca-architect')
   }, [allPass, mission.id, done, revealed, award])
