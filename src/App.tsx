@@ -11,6 +11,7 @@ import { Glossary } from './pages/Glossary'
 import { CheatSheet } from './pages/CheatSheet'
 import { Labs } from './pages/Labs'
 import { OAuthPlayground } from './pages/OAuthPlayground'
+import { NotFound } from './pages/NotFound'
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -127,7 +128,7 @@ function Shell() {
           <Route path="/glossary" element={<Glossary />} />
           <Route path="/cheat-sheet" element={<CheatSheet />} />
           <Route path="/oauth-playground" element={<OAuthPlayground />} />
-          <Route path="*" element={<Home />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <footer className="no-print mt-24 border-t border-line">

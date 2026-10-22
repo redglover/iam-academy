@@ -1,16 +1,17 @@
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Check, Clock } from 'lucide-react'
 import { MODULES, moduleBySlug } from '../data/modules'
 import { BlockRenderer } from '../components/BlockRenderer'
 import { Quiz } from '../components/Quiz'
 import { useProgress } from '../features/progress/progress'
 import { toneText } from '../lib/tone'
+import { NotFound } from './NotFound'
 
 export function ModulePage() {
   const { slug = '' } = useParams()
   const mod = moduleBySlug(slug)
   const { completed, completeModule } = useProgress()
-  if (!mod) return <Navigate to="/" replace />
+  if (!mod) return <NotFound slug={slug} />
 
   const i = MODULES.indexOf(mod)
   const prev = MODULES[i - 1]

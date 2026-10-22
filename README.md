@@ -50,7 +50,7 @@ Paste the client ID (and tenant ID) into the playground. No client secret is nee
 ```bash
 npm ci            # installs the exact versions from package-lock.json
 npm run dev       # http://localhost:5173
-npm test          # engine unit tests (Vitest)
+npm test          # engine unit tests + UI smoke tests (Vitest, jsdom)
 npm run build     # typecheck + production build
 ```
 
@@ -73,3 +73,5 @@ Course content lives in `src/data/` as typed data, so adding a module means addi
 ## Deploy
 
 Pushing to `main` runs `.github/workflows/deploy.yml`, which tests, builds and publishes to GitHub Pages. Enable it once under **Settings → Pages → Source: GitHub Actions**.
+
+GitHub Pages can't send security headers, so the build adds a Content Security Policy `<meta>` tag to `index.html` (`src/lib/csp.ts`, wired up in `vite.config.ts`). It hashes the inline theme script automatically and limits `connect-src` to the site itself, `login.microsoftonline.com` and `graph.microsoft.com`. If the site needs to call another origin, add it to `CONNECT_ORIGINS`. The dev server runs without the policy because Vite's hot reload needs inline scripts and websockets, so check CSP changes with `npm run build && npm run preview`.
