@@ -17,6 +17,7 @@ export default {
         move: v('move'),
         leave: v('leave'),
         auto: v('auto'),
+        on: v('on'),
       },
       fontFamily: {
         display: ['"Bricolage Grotesque Variable"', 'system-ui', 'sans-serif'],

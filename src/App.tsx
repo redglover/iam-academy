@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
-import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
+import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, m } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
 import { BADGES, ProgressProvider, levelFor, useProgress } from './features/progress/progress'
 import { useTheme } from './lib/theme'
@@ -148,12 +148,15 @@ function Shell() {
 export default function App() {
   return (
     <LazyMotion features={domAnimation} strict>
-      <ProgressProvider>
-        <HashRouter>
-          <ScrollToTop />
-          <Shell />
-        </HashRouter>
-      </ProgressProvider>
+      {/* Skip transform and layout animations for people who ask the OS for reduced motion. */}
+      <MotionConfig reducedMotion="user">
+        <ProgressProvider>
+          <HashRouter>
+            <ScrollToTop />
+            <Shell />
+          </HashRouter>
+        </ProgressProvider>
+      </MotionConfig>
     </LazyMotion>
   )
 }

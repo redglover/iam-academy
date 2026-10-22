@@ -65,17 +65,17 @@ export function SamlInspector() {
             rows={5}
             spellCheck={false}
             placeholder="PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wi…"
-            className="mt-2 w-full rounded-xl border-2 border-line bg-paper p-3 font-mono text-xs focus:border-key"
+            className="mt-2 w-full rounded-xl border-2 border-muted/70 bg-paper p-3 font-mono text-xs focus:border-key"
           />
         </label>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="font-semibold">Expected Entity ID (optional)</span>
-            <input value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="https://fjordtech.my.salesforce.com" className="mt-1 w-full rounded-lg border-2 border-line bg-paper px-2.5 py-1.5 font-mono text-xs focus:border-key" />
+            <input value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="https://fjordtech.my.salesforce.com" className="mt-1 w-full rounded-lg border-2 border-muted/70 bg-paper px-2.5 py-1.5 font-mono text-xs focus:border-key" />
           </label>
           <label className="block text-sm">
             <span className="font-semibold">Expected ACS / Reply URL (optional)</span>
-            <input value={acs} onChange={(e) => setAcs(e.target.value)} placeholder="https://fjordtech.my.salesforce.com/saml/acs" className="mt-1 w-full rounded-lg border-2 border-line bg-paper px-2.5 py-1.5 font-mono text-xs focus:border-key" />
+            <input value={acs} onChange={(e) => setAcs(e.target.value)} placeholder="https://fjordtech.my.salesforce.com/saml/acs" className="mt-1 w-full rounded-lg border-2 border-muted/70 bg-paper px-2.5 py-1.5 font-mono text-xs focus:border-key" />
           </label>
         </div>
         {!input && (
@@ -102,7 +102,13 @@ export function SamlInspector() {
             <ul className="mt-3 space-y-2">
               {report.checks.map((c) => (
                 <li key={c.label} className="flex gap-2 text-sm">
-                  {c.ok === true ? <CheckCircle2 size={18} className="shrink-0 text-join" /> : c.ok === false ? <XCircle size={18} className="shrink-0 text-leave" /> : <CircleHelp size={18} className="shrink-0 text-key" />}
+                  {c.ok === true ? (
+                    <CheckCircle2 size={18} className="shrink-0 text-join" role="img" aria-label="Pass:" />
+                  ) : c.ok === false ? (
+                    <XCircle size={18} className="shrink-0 text-leave" role="img" aria-label="Fail:" />
+                  ) : (
+                    <CircleHelp size={18} className="shrink-0 text-key" role="img" aria-label="Not checked:" />
+                  )}
                   <span>
                     <strong>{c.label}.</strong> {c.detail}
                   </span>
@@ -111,7 +117,7 @@ export function SamlInspector() {
             </ul>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-line bg-paper">
+          <div className="overflow-x-auto rounded-2xl border border-line bg-paper" tabIndex={0} role="group" aria-label="Decoded fields">
             <table className="w-full min-w-[480px] text-left text-sm">
               <tbody>
                 {report.fields.map(([k, v]) => (

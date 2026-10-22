@@ -94,6 +94,8 @@ export function Labs() {
     openLab(id)
     pinned.current = id
     pin()
+    // Move keyboard focus to the lab as well, so Tab continues inside it rather than in the jump links.
+    document.getElementById(id)?.focus({ preventScroll: true })
   }
 
   return (

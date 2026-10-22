@@ -1,5 +1,5 @@
 // Shared building blocks for the protocol simulators (OAuth, SAML): sequence diagram, step player, toggles.
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { CheckCircle2, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { CodeBlock } from './CodeBlock'
 import { Inline } from './Inline'
@@ -37,19 +37,26 @@ export function seqOutcome(steps: SeqStep[]): 'breach' | 'blocked' | 'success' {
 }
 
 export function Toggle({ on, onChange, label, hint }: { on: boolean; onChange: (v: boolean) => void; label: string; hint: string }) {
+  const id = useId()
   return (
     <label className="flex cursor-pointer items-start gap-2.5">
       <button
         role="switch"
         aria-checked={on}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={`${id}-hint`}
         onClick={() => onChange(!on)}
         className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full border-2 border-ink transition-colors ${on ? 'bg-join' : 'bg-line'}`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-paper ring-1 ring-ink transition-all ${on ? 'left-[1.3rem]' : 'left-0.5'}`} />
       </button>
       <span>
-        <span className="font-semibold">{label}</span>
-        <span className="block text-sm text-muted">{hint}</span>
+        <span id={`${id}-label`} className="font-semibold">
+          {label}
+        </span>
+        <span id={`${id}-hint`} className="block text-sm text-muted">
+          {hint}
+        </span>
       </span>
     </label>
   )
@@ -117,7 +124,7 @@ export function SequenceDiagram({ actors, steps, current, onSelect }: { actors: 
                 />
                 {a === b ? (
                   <span
-                    className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-xs font-bold text-white ${visited ? K.line : 'bg-line'}`}
+                    className={`pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 py-0.5 text-xs font-bold ${visited ? `${K.line} text-on` : 'bg-line text-muted'}`}
                     style={{ left: `${((a + 0.5) / n) * 100}%` }}
                   >
                     {k + 1}
@@ -131,7 +138,7 @@ export function SequenceDiagram({ actors, steps, current, onSelect }: { actors: 
                     <span
                       className={`h-0 w-0 border-y-[6px] border-y-transparent ${b > a ? 'border-l-[9px]' : 'border-r-[9px]'} ${visited ? K.arrow : 'border-l-line border-r-line'}`}
                     />
-                    <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-1.5 text-[11px] font-bold text-white ${visited ? K.line : 'bg-line'}`}>
+                    <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-1.5 text-[11px] font-bold ${visited ? `${K.line} text-on` : 'bg-line text-muted'}`}>
                       {k + 1}
                     </span>
                   </span>
@@ -164,28 +171,32 @@ export function StepDetail({
           Step {i + 1} of {steps.length}: {name(step.from)}
           {step.from !== step.to && ` → ${name(step.to)}`}
         </p>
+        {/* aria-disabled, not disabled, so focus stays put at the first and last step */}
         <div className="flex gap-1.5">
-          <button className="btn py-1 text-sm" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0} aria-label="Previous step">
+          <button className="btn py-1 text-sm" onClick={() => setI(Math.max(0, i - 1))} aria-disabled={i === 0} aria-label="Previous step">
             <ChevronLeft size={16} />
           </button>
           <button className="btn py-1 text-sm" onClick={() => (atEnd ? setI(0) : setPlaying(!playing))}>
             {atEnd ? <RotateCcw size={15} /> : playing ? <Pause size={15} /> : <Play size={15} />}
             {atEnd ? 'Replay' : playing ? 'Pause' : 'Play'}
           </button>
-          <button className="btn btn-key py-1 text-sm" onClick={() => setI(Math.min(steps.length - 1, i + 1))} disabled={atEnd}>
+          <button className="btn btn-key py-1 text-sm" onClick={() => setI(Math.min(steps.length - 1, i + 1))} aria-disabled={atEnd}>
             Next <ChevronRight size={16} />
           </button>
         </div>
       </div>
-      <h4 className={`mt-2 flex items-center gap-2 text-xl font-semibold ${KIND[step.kind].text}`}>
-        {step.kind === 'success' && <CheckCircle2 size={20} />}
-        {step.kind === 'breach' && <ShieldAlert size={20} />}
-        {step.kind === 'blocked' && <ShieldCheck size={20} />}
-        <Inline text={step.title} />
-      </h4>
-      <p className="mt-1 max-w-[70ch]">
-        <Inline text={step.note} />
-      </p>
+      <div aria-live="polite">
+        <h3 className={`mt-2 flex items-center gap-2 text-xl font-semibold ${KIND[step.kind].text}`}>
+          {step.kind === 'success' && <CheckCircle2 size={20} />}
+          {step.kind === 'breach' && <ShieldAlert size={20} />}
+          {step.kind === 'blocked' && <ShieldCheck size={20} />}
+          <span className="sr-only">Step {i + 1}:</span>
+          <Inline text={step.title} />
+        </h3>
+        <p className="mt-1 max-w-[70ch]">
+          <Inline text={step.note} />
+        </p>
+      </div>
       {step.http && <CodeBlock title="On the wire" lang={step.http.trimStart().startsWith('<') ? 'xml' : 'http'} code={step.http} />}
     </div>
   )
@@ -193,7 +204,7 @@ export function StepDetail({
 
 export function AttackVerdict({ result }: { result: 'breach' | 'blocked' | 'success' }) {
   return (
-    <span className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${result === 'breach' ? 'text-leave' : 'text-join'}`}>
+    <span className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${result === 'breach' ? 'text-leave' : 'text-join'}`} role="status">
       {result === 'breach' ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
       {result === 'breach' ? 'With these settings the attack succeeds.' : 'With these settings the attack is stopped.'}
     </span>

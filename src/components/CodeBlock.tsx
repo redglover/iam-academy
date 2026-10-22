@@ -19,12 +19,16 @@ export function CodeBlock({ title, code, lang, notes }: { title: string; code: s
         <span className="font-display text-sm font-semibold">{title}</span>
         <span className="flex items-center gap-2">
           <span className="rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs">{lang}</span>
-          <button onClick={copy} className="rounded-md p-1.5 hover:bg-white/10" aria-label="Copy code">
+          <button onClick={copy} className="rounded-md p-1.5 hover:bg-white/10" aria-label={`Copy code: ${title}`}>
             {copied ? <Check size={16} /> : <Copy size={16} />}
           </button>
+          <span className="sr-only" aria-live="polite">
+            {copied ? 'Copied' : ''}
+          </span>
         </span>
       </figcaption>
-      <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed">
+      {/* Focusable so keyboard users can scroll long lines sideways. */}
+      <pre className="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed" tabIndex={0}>
         <code>{code}</code>
       </pre>
       {notes && (

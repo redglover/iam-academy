@@ -21,10 +21,11 @@ import {
 import { describePolicy, evaluate, type Verdict } from './engine'
 import { MISSIONS, runMission } from './missions'
 import { CA_MISSIONS_KEY, useProgress } from '../progress/progress'
+import { Tabs } from '../../components/Tabs'
 import { load, save } from '../../lib/storage'
 import { celebrate } from '../../lib/confetti'
 
-const select = 'w-full rounded-lg border-2 border-line bg-paper px-2 py-1.5 text-sm font-semibold focus:border-key'
+const select = 'w-full rounded-lg border-2 border-muted/70 bg-paper px-2 py-1.5 text-sm font-semibold focus:border-key'
 
 function Chip({ on, onClick, children, tone = 'key' }: { on: boolean; onClick: () => void; children: React.ReactNode; tone?: 'key' | 'leave' }) {
   return (
@@ -32,7 +33,7 @@ function Chip({ on, onClick, children, tone = 'key' }: { on: boolean; onClick: (
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`chip py-1 text-sm ${on ? (tone === 'leave' ? 'border-leave bg-leave text-white' : 'border-ink bg-ink text-paper') : 'border-line bg-paper hover:border-ink'}`}
+      className={`chip py-1 text-sm ${on ? (tone === 'leave' ? 'border-leave bg-leave text-on' : 'border-ink bg-ink text-paper') : 'border-line bg-paper hover:border-ink'}`}
     >
       {children}
     </button>
@@ -43,9 +44,9 @@ const toggleIn = <T,>(list: T[] | undefined, v: T): T[] => ((list ?? []).include
 
 function VerdictCard({ verdict }: { verdict: Verdict }) {
   const style = {
-    block: { cls: 'border-leave bg-leave/[.08]', icon: <ShieldX className="text-leave" size={26} /> },
-    grant: { cls: 'border-join bg-join/[.08]', icon: <ShieldCheck className="text-join" size={26} /> },
-    allow: { cls: 'border-move bg-move/[.08]', icon: <CircleSlash className="text-move" size={26} /> },
+    block: { cls: 'border-leave bg-leave/[.08]', icon: <ShieldX className="shrink-0 text-leave" size={26} /> },
+    grant: { cls: 'border-join bg-join/[.08]', icon: <ShieldCheck className="shrink-0 text-join" size={26} /> },
+    allow: { cls: 'border-move bg-move/[.08]', icon: <CircleSlash className="shrink-0 text-move" size={26} /> },
   }[verdict.decision]
   return (
     <div className={`rounded-2xl border-2 p-4 ${style.cls}`} aria-live="polite">
@@ -196,7 +197,7 @@ function WhatIf() {
       <VerdictCard verdict={verdict} />
 
       <div className="rounded-2xl border border-line bg-paper p-4">
-        <h4 className="text-base font-semibold">Fjordtech’s policies</h4>
+        <h3 className="text-base font-semibold">Fjordtech’s policies</h3>
         <p className="text-sm text-muted">Every policy is checked; the ones that apply are combined. Switch policies off or to report-only to see what changes.</p>
         <ul className="mt-3 grid gap-2">
           {policies.map((p) => {
@@ -210,7 +211,7 @@ function WhatIf() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-xs font-bold">{p.id}</span>
                   <span className="min-w-0 flex-1 font-semibold">{p.name}</span>
-                  <span className="inline-flex rounded-lg border border-line p-0.5 text-xs">
+                  <span className="inline-flex rounded-lg border border-line p-0.5 text-xs" role="group" aria-label={`State of ${p.id}`}>
                     {(['on', 'report', 'off'] as const).map((st) => (
                       <button
                         key={st}
@@ -226,7 +227,7 @@ function WhatIf() {
                 <p className="mt-1 text-xs text-muted">{describePolicy(p)}</p>
                 {p.state !== 'off' && r && (
                   <p className={`mt-1.5 flex gap-1.5 text-sm ${applies ? (p.grant.block ? 'text-leave' : 'text-join') : 'text-muted'}`}>
-                    {applies ? <CheckCircle2 size={16} className="mt-0.5 shrink-0" /> : <XCircle size={16} className="mt-0.5 shrink-0" />}
+                    {applies ? <CheckCircle2 size={16} className="mt-0.5 shrink-0" aria-hidden /> : <XCircle size={16} className="mt-0.5 shrink-0" aria-hidden />}
                     <span>
                       <strong>{applies ? (p.state === 'report' ? 'Applies (report-only)' : 'Applies') : 'Doesn’t apply'}:</strong> {r.reasons.join(' ')}
                     </span>
@@ -358,7 +359,7 @@ function PolicyForm({ p, onChange }: { p: Policy; onChange: (p: Policy) => void 
             </Chip>
           ))}
           {require.length > 1 && (
-            <span className="ml-2 inline-flex rounded-lg border border-line p-0.5 text-xs">
+            <span className="ml-2 inline-flex rounded-lg border border-line p-0.5 text-xs" role="group" aria-label="How the controls combine">
               {(['AND', 'OR'] as const).map((op) => (
                 <button key={op} onClick={() => set({ grant: { block: false, require, operator: op } })} aria-pressed={operator === op} className={`rounded-md px-2 py-0.5 font-semibold ${operator === op ? 'bg-ink text-paper' : 'text-muted'}`}>
                   {op === 'AND' ? 'Require all' : 'Require one'}
@@ -380,6 +381,7 @@ function Missions() {
   const [showHint, setShowHint] = useState(false)
   const [revealed, setRevealed] = useState<string[]>([])
   const { award } = useProgress()
+  const missionTitle = useRef<HTMLHeadingElement>(null)
   const draft = drafts[mission.id]
   const results = useMemo(() => runMission(mission, draft), [mission, draft])
   const allPass = results.every((r) => r.pass)
@@ -405,15 +407,17 @@ function Missions() {
             aria-pressed={i === idx}
             className={`chip py-1 text-sm ${i === idx ? 'border-ink bg-ink text-paper' : 'border-line bg-paper'}`}
           >
-            {done.includes(m.id) && <CheckCircle2 size={14} className={i === idx ? '' : 'text-join'} />} Mission {i + 1}
+            {done.includes(m.id) && <CheckCircle2 size={14} className={i === idx ? '' : 'text-join'} role="img" aria-label="Completed:" />} Mission {i + 1}
           </button>
         ))}
       </div>
       <div className="rounded-2xl border border-line bg-paper p-4">
-        <h4 className="text-lg font-semibold">{mission.title}</h4>
+        <h3 className="text-lg font-semibold" tabIndex={-1} ref={missionTitle}>
+          {mission.title}
+        </h3>
         <p className="mt-1 max-w-[68ch]">{mission.goal}</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button className="btn btn-ghost py-1 text-sm" onClick={() => setShowHint((v) => !v)}>
+          <button className="btn btn-ghost py-1 text-sm" onClick={() => setShowHint((v) => !v)} aria-expanded={showHint} aria-controls="ca-mission-hint">
             <Lightbulb size={15} /> {showHint ? 'Hide hint' : 'Hint'}
           </button>
           <button className="btn btn-ghost py-1 text-sm" onClick={() => {
@@ -431,7 +435,11 @@ function Missions() {
             Reset policy
           </button>
         </div>
-        {showHint && <p className="mt-2 rounded-lg bg-move/10 p-2.5 text-sm">{mission.hint}</p>}
+        {showHint && (
+          <p id="ca-mission-hint" className="mt-2 rounded-lg bg-move/10 p-2.5 text-sm">
+            {mission.hint}
+          </p>
+        )}
       </div>
 
       <PolicyForm p={draft} onChange={(p) => setDrafts((d) => ({ ...d, [mission.id]: p }))} />
@@ -441,11 +449,11 @@ function Missions() {
       </p>
 
       <div className={`rounded-2xl border-2 p-4 ${allPass ? 'border-join bg-join/[.06]' : 'border-line bg-paper'}`} aria-live="polite">
-        <h4 className="text-base font-semibold">{allPass ? (revealed.includes(mission.id) && !done.includes(mission.id) ? 'All tests pass with the sample solution. Reset and build it yourself to complete the mission.' : 'All tests pass. Mission complete.') : `Test sign-ins: ${results.filter((r) => r.pass).length} of ${results.length} passing`}</h4>
+        <h3 className="text-base font-semibold">{allPass ? (revealed.includes(mission.id) && !done.includes(mission.id) ? 'All tests pass with the sample solution. Reset and build it yourself to complete the mission.' : 'All tests pass. Mission complete.') : `Test sign-ins: ${results.filter((r) => r.pass).length} of ${results.length} passing`}</h3>
         <ul className="mt-2 space-y-2">
           {results.map((r) => (
             <li key={r.test.name} className="flex gap-2 text-sm">
-              {r.pass ? <CheckCircle2 size={18} className="shrink-0 text-join" /> : <XCircle size={18} className="shrink-0 text-leave" />}
+              {r.pass ? <CheckCircle2 size={18} className="shrink-0 text-join" role="img" aria-label="Pass:" /> : <XCircle size={18} className="shrink-0 text-leave" role="img" aria-label="Fail:" />}
               <span>
                 <strong>{r.test.name}.</strong> {r.why}
               </span>
@@ -453,7 +461,13 @@ function Missions() {
           ))}
         </ul>
         {allPass && idx < MISSIONS.length - 1 && (
-          <button className="btn btn-key mt-3 py-1.5 text-sm" onClick={() => setIdx(idx + 1)}>
+          <button
+            className="btn btn-key mt-3 py-1.5 text-sm"
+            onClick={() => {
+              setIdx(idx + 1)
+              missionTitle.current?.focus() // this button goes away with the next mission
+            }}
+          >
             Next mission
           </button>
         )}
@@ -466,25 +480,17 @@ export function CaLab() {
   const [tab, setTab] = useState<'whatif' | 'missions'>('whatif')
   return (
     <section className="my-8 rounded-[1.75rem] border-2 border-ink bg-fog p-3 sm:p-5" aria-label="Conditional Access lab">
-      <div className="flex flex-wrap gap-2" role="tablist">
-        {(
-          [
-            ['whatif', 'What If'],
-            ['missions', 'Policy missions'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`chip py-1.5 font-display text-sm font-semibold ${tab === id ? 'border-ink bg-ink text-paper' : 'border-line bg-paper'}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      {tab === 'whatif' ? <WhatIf /> : <Missions />}
+      <Tabs
+        label="Conditional Access lab"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          ['whatif', 'What If'],
+          ['missions', 'Policy missions'],
+        ]}
+      >
+        {tab === 'whatif' ? <WhatIf /> : <Missions />}
+      </Tabs>
     </section>
   )
 }

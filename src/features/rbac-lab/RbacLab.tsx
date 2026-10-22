@@ -59,7 +59,7 @@ export function RbacLab() {
   return (
     <section className="my-8 rounded-[1.75rem] border-2 border-ink bg-fog p-3 sm:p-5" aria-label="RBAC lab">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-lg font-semibold">Fix Fjordtech’s business roles</h4>
+        <h3 className="text-lg font-semibold">Fix Fjordtech’s business roles</h3>
         <button className="btn btn-ghost py-1.5 text-sm" onClick={() => setRoles(START)}>
           <RotateCcw size={15} /> Reset
         </button>
@@ -98,9 +98,9 @@ export function RbacLab() {
                           onClick={() => toggle(j.id, ent)}
                           aria-pressed={on}
                           aria-label={`${e.name} in ${j.role}`}
-                          className={`h-8 w-8 rounded-lg border-2 font-bold transition-colors ${on ? 'border-ink bg-move text-white' : 'border-line hover:border-ink'}`}
+                          className={`h-8 w-8 rounded-lg border-2 font-bold transition-colors ${on ? 'border-ink bg-move text-on' : 'border-muted/70 hover:border-ink'}`}
                         >
-                          {on ? '✓' : ''}
+                          <span aria-hidden>{on ? '✓' : ''}</span>
                         </button>
                       </td>
                     )
@@ -118,7 +118,7 @@ export function RbacLab() {
           return (
             <div key={r.job.id} className={`rounded-xl border-2 bg-paper p-3 text-sm ${ok ? 'border-join/40' : 'border-leave/40'}`}>
               <p className="flex items-center gap-1.5 font-display font-semibold">
-                {ok ? <CheckCircle2 size={16} className="text-join" /> : <AlertTriangle size={16} className="text-leave" />} {r.job.role}
+                {ok ? <CheckCircle2 size={16} className="text-join" role="img" aria-label="OK:" /> : <AlertTriangle size={16} className="text-leave" role="img" aria-label="Problems:" />} {r.job.role}
               </p>
               {ok && <p className="text-muted">Least privilege, no conflicts.</p>}
               {r.missing.map((m) => (
@@ -152,18 +152,18 @@ function PrivilegeCreep() {
 
   return (
     <div className="mt-6 rounded-2xl border border-line bg-paper p-4">
-      <h4 className="text-lg font-semibold">Watch privilege creep happen</h4>
+      <h3 className="text-lg font-semibold">Watch privilege creep happen</h3>
       <p className="mt-1 max-w-[68ch] text-[0.98rem]">Ola changes jobs every year. Step through his career and compare manual and automated movers.</p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-xl border-2 border-ink p-0.5">
-          <button onClick={() => setAuto(false)} aria-pressed={!auto} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold ${!auto ? 'bg-move text-white' : 'text-muted'}`}>
+        <div className="inline-flex rounded-xl border-2 border-ink p-0.5" role="group" aria-label="How movers are handled">
+          <button onClick={() => setAuto(false)} aria-pressed={!auto} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold ${!auto ? 'bg-move text-on' : 'text-muted'}`}>
             <Hand size={14} /> Manual movers
           </button>
-          <button onClick={() => setAuto(true)} aria-pressed={auto} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold ${auto ? 'bg-auto text-white' : 'text-muted'}`}>
+          <button onClick={() => setAuto(true)} aria-pressed={auto} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold ${auto ? 'bg-auto text-on' : 'text-muted'}`}>
             <Bot size={14} /> Automated movers
           </button>
         </div>
-        <ol className="flex flex-wrap gap-1.5">
+        <ol className="flex flex-wrap gap-1.5" aria-label="Ola’s career">
           {CAREER.map((id, i) => (
             <li key={id}>
               <button
@@ -181,10 +181,11 @@ function PrivilegeCreep() {
         {held.map((e) => (
           <span key={e} className={`chip text-sm ${excess.includes(e) ? 'border-leave/50 bg-leave/10' : 'border-join/40 bg-join/10'}`}>
             {ENTITLEMENTS[e].name}
+            <span className="sr-only">{excess.includes(e) ? ' (left over)' : ' (needed)'}</span>
           </span>
         ))}
       </div>
-      <p className="mt-3 text-sm">
+      <p className="mt-3 text-sm" aria-live="polite">
         {excess.length === 0 ? (
           <span className="text-join">Ola holds exactly what his current job needs.</span>
         ) : (

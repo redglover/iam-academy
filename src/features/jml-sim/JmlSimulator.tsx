@@ -26,6 +26,7 @@ export function JmlSimulator() {
   const { who, log, shown, playing, fire, skip, reset } = useJmlPlayer(persona)
   const { award, addXp } = useProgress()
   const logEnd = useRef<HTMLLIElement>(null)
+  const resetBtn = useRef<HTMLButtonElement>(null)
 
   const issues = useMemo(() => findings(who), [who])
   const canHire = who.status === 'none'
@@ -84,7 +85,7 @@ export function JmlSimulator() {
                 onClick={() => setMode(m)}
                 aria-pressed={mode === m}
                 className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-display text-sm font-semibold ${
-                  mode === m ? (m === 'manual' ? 'bg-move text-white' : 'bg-auto text-white') : 'text-muted'
+                  mode === m ? (m === 'manual' ? 'bg-move text-on' : 'bg-auto text-on') : 'text-muted'
                 }`}
               >
                 {m === 'manual' ? <Hand size={15} /> : <Bot size={15} />}
@@ -103,7 +104,7 @@ export function JmlSimulator() {
             <select
               value={dept}
               onChange={(e) => setDept(e.target.value as Department)}
-              className="rounded-lg border-2 border-line bg-paper px-2 py-1.5 font-semibold"
+              className="rounded-lg border-2 border-muted/70 bg-paper px-2 py-1.5 font-semibold"
               disabled={playing}
             >
               {(canHire ? DEPARTMENTS : moveTargets).map((d) => (
@@ -112,22 +113,29 @@ export function JmlSimulator() {
             </select>
           </label>
         )}
-        <button className="btn border-join py-1.5 text-sm" disabled={!canHire || playing} onClick={() => fire({ type: 'joiner', dept }, mode)}>
+        {/* aria-disabled, not disabled: the button you just pressed keeps keyboard focus while the event plays out. */}
+        <button className="btn border-join py-1.5 text-sm" aria-disabled={!canHire || playing} onClick={() => canHire && !playing && fire({ type: 'joiner', dept }, mode)}>
           Hire into {canHire ? dept : '…'}
         </button>
-        <button className="btn border-move py-1.5 text-sm" disabled={!canMove || playing} onClick={() => fire({ type: 'mover', dept }, mode)}>
+        <button className="btn border-move py-1.5 text-sm" aria-disabled={!canMove || playing} onClick={() => canMove && !playing && fire({ type: 'mover', dept }, mode)}>
           Transfer to {canMove ? dept : '…'}
         </button>
-        <button className="btn border-leave py-1.5 text-sm" disabled={!canLeave || playing} onClick={() => fire({ type: 'leaver' }, mode)}>
+        <button className="btn border-leave py-1.5 text-sm" aria-disabled={!canLeave || playing} onClick={() => canLeave && !playing && fire({ type: 'leaver' }, mode)}>
           Terminate
         </button>
         <span className="ml-auto flex gap-1">
           {playing && (
-            <button className="btn btn-ghost py-1.5 text-sm" onClick={skip}>
+            <button
+              className="btn btn-ghost py-1.5 text-sm"
+              onClick={() => {
+                skip()
+                resetBtn.current?.focus() // Skip disappears; keep focus next to where it was
+              }}
+            >
               <FastForward size={15} /> Skip
             </button>
           )}
-          <button className="btn btn-ghost py-1.5 text-sm" onClick={reset} disabled={!log.length}>
+          <button ref={resetBtn} className="btn btn-ghost py-1.5 text-sm" onClick={() => log.length && reset()} aria-disabled={!log.length}>
             <RotateCcw size={15} /> Reset
           </button>
         </span>
@@ -142,14 +150,16 @@ export function JmlSimulator() {
           {/* audit log */}
           <div className="rounded-2xl border border-line bg-paper">
             <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-              <h4 className="text-base font-semibold">Audit log</h4>
+              <h3 id="jml-log-h" className="text-base font-semibold">
+                Audit log
+              </h3>
               {elapsed !== null && (
                 <span className={`chip text-xs ${last.mode === 'manual' ? 'border-move/50 text-move' : 'border-auto/50 text-auto'}`}>
                   {EVENT_NAME[last.event.type]} took {formatElapsed(elapsed).slice(1)}
                 </span>
               )}
             </div>
-            <ol className="max-h-[22rem] space-y-0 overflow-y-auto px-4 py-3" aria-live="polite">
+            <ol className="max-h-[22rem] space-y-0 overflow-y-auto px-4 py-3" aria-live="polite" aria-labelledby="jml-log-h" tabIndex={0}>
               {!log.length && (
                 <li className="py-8 text-center text-muted">
                   Pick a person and a department, then fire an HR event. Each step shows up here as the system performs it.
@@ -184,10 +194,10 @@ export function JmlSimulator() {
 
           {/* findings */}
           <div className={`rounded-2xl border-2 p-4 ${issues.length ? 'border-leave/50 bg-leave/[.05]' : 'border-join/40 bg-join/[.05]'}`}>
-            <h4 className="flex items-center gap-2 text-base font-semibold">
+            <h3 className="flex items-center gap-2 text-base font-semibold">
               {issues.length ? <ShieldAlert className="text-leave" size={18} /> : <CheckCircle2 className="text-join" size={18} />}
               Auditor findings: {issues.length}
-            </h4>
+            </h3>
             {issues.length === 0 ? (
               <p className="mt-1 text-sm text-muted">
                 {who.status === 'none' ? 'Nothing to audit yet.' : 'Access matches policy. Nothing an auditor would flag.'}

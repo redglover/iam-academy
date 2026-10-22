@@ -170,7 +170,7 @@ export function Home() {
                 <li key={m.slug}>
                   <Link to={`/learn/${m.slug}`} className="group flex h-full gap-4 rounded-badge border-2 border-line p-4 transition-colors hover:border-ink">
                     <span
-                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-display text-lg font-bold ${done ? 'bg-join text-white' : `${toneTint[m.tone]} text-ink`}`}
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-display text-lg font-bold ${done ? 'bg-join text-on' : `${toneTint[m.tone]} text-ink`}`}
                     >
                       {done ? <Check size={20} /> : i + 1}
                     </span>

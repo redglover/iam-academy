@@ -34,7 +34,7 @@ export function ModulePage() {
                     aria-current={active ? 'page' : undefined}
                     className={`flex items-start gap-2.5 rounded-lg px-2 py-1.5 text-[0.93rem] leading-snug ${active ? 'bg-ink text-paper' : 'hover:bg-ink/5'}`}
                   >
-                    <span className={`mt-px grid h-5 w-5 shrink-0 place-items-center rounded-md text-xs font-bold ${ok ? 'bg-join text-white' : active ? 'bg-paper/20' : 'bg-ink/10'}`}>
+                    <span className={`mt-px grid h-5 w-5 shrink-0 place-items-center rounded-md text-xs font-bold ${ok ? 'bg-join text-on' : active ? 'bg-paper/20' : 'bg-ink/10'}`}>
                       {ok ? <Check size={12} /> : n + 1}
                     </span>
                     {m.title}
