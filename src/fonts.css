@@ -1,0 +1,41 @@
+/*
+ * Latin-only, woff2-only font faces. The Fontsource package CSS also declares latin-ext, cyrillic,
+ * greek and vietnamese subsets plus woff fallbacks, which the course text (English and Norwegian)
+ * never uses. Every supported browser reads woff2.
+ */
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url(@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2');
+}
+/* Module text uses *emphasis*; without this face the browser would fake a slanted 400. */
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url(@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-italic.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Bricolage Grotesque Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url(@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2) format('woff2-variations');
+}
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url(@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2) format('woff2-variations');
+}

@@ -1,12 +1,15 @@
 import type { Module } from './types'
+import { moduleMeta } from './moduleIndex'
+
+const meta = (slug: string) => {
+  const m = moduleMeta(slug)
+  if (!m) throw new Error(`No module index entry for ${slug}`)
+  return m
+}
 
 export const MODULES: Module[] = [
   {
-    slug: 'fundamentals',
-    title: 'Identity, accounts and access',
-    tagline: 'The vocabulary everything else is built on.',
-    minutes: 8,
-    tone: 'key',
+    ...meta('fundamentals'),
     blocks: [
       {
         t: 'p',
@@ -79,11 +82,7 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    slug: 'principles',
-    title: 'The principles that never change',
-    tagline: 'Least privilege, separation of duties, zero trust, and the enemies: creep and orphans.',
-    minutes: 9,
-    tone: 'key',
+    ...meta('principles'),
     blocks: [
       {
         t: 'p',
@@ -169,11 +168,7 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    slug: 'jml',
-    title: 'Joiner, Mover, Leaver in practice',
-    tagline: 'The lifecycle at the heart of every IAM team. Run it yourself.',
-    minutes: 15,
-    tone: 'join',
+    ...meta('jml'),
     blocks: [
       {
         t: 'p',
@@ -272,11 +267,7 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    slug: 'access-models',
-    title: 'Roles, attributes and groups',
-    tagline: 'How you decide who gets what, at scale.',
-    minutes: 11,
-    tone: 'move',
+    ...meta('access-models'),
     blocks: [
       {
         t: 'p',
@@ -354,11 +345,7 @@ export const MODULES: Module[] = [
     ],
   },
   {
-    slug: 'automation',
-    title: 'Automating IAM',
-    tagline: 'From HR event to provisioned access, without a human in the loop.',
-    minutes: 18,
-    tone: 'auto',
+    ...meta('automation'),
     blocks: [
       {
         t: 'p',
@@ -484,11 +471,7 @@ Write-Output (@{ action='leaver'; upn=$user.UserPrincipalName; at=(Get-Date -AsU
     ],
   },
   {
-    slug: 'oauth',
-    title: 'OAuth 2.0 and OpenID Connect',
-    tagline: 'How apps get access without your password, and how to set it up in Entra ID.',
-    minutes: 20,
-    tone: 'key',
+    ...meta('oauth'),
     blocks: [
       {
         t: 'p',
@@ -701,11 +684,7 @@ Update-MgUser -UserId 'kari.lunde@fjordtech.no' -AccountEnabled:$false`,
     ],
   },
   {
-    slug: 'saml',
-    title: 'SAML single sign-on',
-    tagline: 'The XML protocol behind most enterprise SSO: how it works, how to set it up in Entra, and how it breaks.',
-    minutes: 18,
-    tone: 'auto',
+    ...meta('saml'),
     blocks: [
       {
         t: 'p',
@@ -881,11 +860,7 @@ Update-MgUser -UserId 'kari.lunde@fjordtech.no' -AccountEnabled:$false`,
     ],
   },
   {
-    slug: 'scim',
-    title: 'SCIM provisioning',
-    tagline: 'The standard API that creates, updates and removes accounts in apps, and closes the gap SSO leaves open.',
-    minutes: 18,
-    tone: 'join',
+    ...meta('scim'),
     blocks: [
       {
         t: 'p',
@@ -1068,11 +1043,7 @@ Invoke-RestMethod "$base/Users/u-0001" -Method Patch -Headers $headers -Body $bo
     ],
   },
   {
-    slug: 'governance',
-    title: 'Governance: reviews, SoD and proof',
-    tagline: 'Automation gives access. Governance checks that it’s still right.',
-    minutes: 10,
-    tone: 'auto',
+    ...meta('governance'),
     blocks: [
       {
         t: 'p',
@@ -1139,11 +1110,7 @@ Invoke-RestMethod "$base/Users/u-0001" -Method Patch -Headers $headers -Body $bo
     ],
   },
   {
-    slug: 'ca',
-    title: 'Conditional Access',
-    tagline: 'The Zero Trust policy engine behind every Entra ID sign-in: how it decides, and how to roll it out without locking anyone out.',
-    minutes: 20,
-    tone: 'leave',
+    ...meta('ca'),
     blocks: [
       {
         t: 'p',
@@ -1301,11 +1268,7 @@ Get-MgIdentityConditionalAccessPolicy -All | ForEach-Object {
     ],
   },
   {
-    slug: 'privileged',
-    title: 'Privileged access',
-    tagline: 'Admin rights are the crown jewels. Treat them that way.',
-    minutes: 11,
-    tone: 'leave',
+    ...meta('privileged'),
     blocks: [
       {
         t: 'p',
@@ -1410,11 +1373,7 @@ Get-MgDirectoryRoleMember -DirectoryRoleId $ga.Id |
     ],
   },
   {
-    slug: 'pim',
-    title: 'PIM in practice',
-    tagline: 'Just-in-time admin rights with Entra Privileged Identity Management: set it up, use it, and clean up standing access.',
-    minutes: 18,
-    tone: 'leave',
+    ...meta('pim'),
     blocks: [
       {
         t: 'p',
@@ -1570,11 +1529,7 @@ New-MgRoleManagementDirectoryRoleAssignmentScheduleRequest -BodyParameter @{
     ],
   },
   {
-    slug: 'compliance',
-    title: 'Compliance and the Norwegian context',
-    tagline: 'GDPR, NSM, ISO 27001: what auditors will ask you for.',
-    minutes: 10,
-    tone: 'key',
+    ...meta('compliance'),
     blocks: [
       {
         t: 'p',

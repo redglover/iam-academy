@@ -22,12 +22,15 @@ export interface Question {
   explain: string
 }
 
-export interface Module {
+export interface ModuleMeta {
   slug: string
   title: string
   tagline: string
   minutes: number
   tone: Tone
+}
+
+export interface Module extends ModuleMeta {
   blocks: Block[]
   quiz: Question[]
 }

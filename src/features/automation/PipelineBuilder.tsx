@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, m } from 'framer-motion'
 import { ArrowDown, ArrowUp, CircleAlert, Info, Plus, RotateCcw, Sparkles, TriangleAlert, X } from 'lucide-react'
 import { SCENARIOS, score, toScript, type Scenario } from './pipeline'
 import { CodeBlock } from '../../components/CodeBlock'
 import { useProgress } from '../progress/progress'
+import { loadDomMax } from '../../lib/motion'
 
 const ISSUE_STYLE = {
   error: { icon: CircleAlert, cls: 'text-leave' },
@@ -127,33 +128,35 @@ export function PipelineBuilder() {
               {said}
             </p>
             <ol className="mt-3 grid gap-1.5" aria-labelledby="pipeline-h">
-              <AnimatePresence initial={false}>
-                {ids.map((id, i) => {
-                  const b = scenario.blocks.find((x) => x.id === id)!
-                  return (
-                    <motion.li
-                      key={id}
-                      layout
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="flex items-center gap-2 rounded-xl border-2 border-auto/40 bg-auto/[.06] py-1.5 pl-3 pr-1.5"
-                    >
-                      <span className="w-6 shrink-0 font-display font-bold text-auto">{i + 1}</span>
-                      <span className="min-w-0 flex-1 font-semibold">{b.label}</span>
-                      <button className="rounded-md p-1.5 hover:bg-ink/10 disabled:opacity-30" data-up={id} onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${b.label} up`}>
-                        <ArrowUp size={16} />
-                      </button>
-                      <button className="rounded-md p-1.5 hover:bg-ink/10 disabled:opacity-30" data-down={id} onClick={() => move(i, 1)} disabled={i === ids.length - 1} aria-label={`Move ${b.label} down`}>
-                        <ArrowDown size={16} />
-                      </button>
-                      <button className="rounded-md p-1.5 hover:bg-leave/15" data-remove={id} onClick={() => remove(i)} aria-label={`Remove ${b.label}`}>
-                        <X size={16} />
-                      </button>
-                    </motion.li>
-                  )
-                })}
-              </AnimatePresence>
+              <LazyMotion features={loadDomMax}>
+                <AnimatePresence initial={false}>
+                  {ids.map((id, i) => {
+                    const b = scenario.blocks.find((x) => x.id === id)!
+                    return (
+                      <m.li
+                        key={id}
+                        layout
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        className="flex items-center gap-2 rounded-xl border-2 border-auto/40 bg-auto/[.06] py-1.5 pl-3 pr-1.5"
+                      >
+                        <span className="w-6 shrink-0 font-display font-bold text-auto">{i + 1}</span>
+                        <span className="min-w-0 flex-1 font-semibold">{b.label}</span>
+                        <button className="rounded-md p-1.5 hover:bg-ink/10 disabled:opacity-30" data-up={id} onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move ${b.label} up`}>
+                          <ArrowUp size={16} />
+                        </button>
+                        <button className="rounded-md p-1.5 hover:bg-ink/10 disabled:opacity-30" data-down={id} onClick={() => move(i, 1)} disabled={i === ids.length - 1} aria-label={`Move ${b.label} down`}>
+                          <ArrowDown size={16} />
+                        </button>
+                        <button className="rounded-md p-1.5 hover:bg-leave/15" data-remove={id} onClick={() => remove(i)} aria-label={`Remove ${b.label}`}>
+                          <X size={16} />
+                        </button>
+                      </m.li>
+                    )
+                  })}
+                </AnimatePresence>
+              </LazyMotion>
             </ol>
           </div>
 

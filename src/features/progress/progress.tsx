@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { MODULES } from '../../data/modules'
+import { MODULE_INDEX } from '../../data/moduleIndex'
 import { load, remove, save } from '../../lib/storage'
 
 export const BADGES = {
@@ -49,7 +49,7 @@ const empty: State = { xp: 0, completed: [], quizBest: {}, badges: [] }
 const ProgressContext = createContext<Ctx | null>(null)
 
 // Only slugs that still exist count, so a renamed module's old slug can't stand in for the new one.
-export function hasGraduated(completed: string[], slugs: string[] = MODULES.map((m) => m.slug)) {
+export function hasGraduated(completed: string[], slugs: string[] = MODULE_INDEX.map((m) => m.slug)) {
   return slugs.length > 0 && slugs.every((slug) => completed.includes(slug))
 }
 
