@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
+import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router'
 import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, m } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
 import { BADGES, ProgressProvider, levelFor, useProgress } from './features/progress/progress'

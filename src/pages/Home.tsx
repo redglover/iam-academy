@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 import { Check } from 'lucide-react'
 import { MODULE_INDEX } from '../data/moduleIndex'
 import { PERSONAS, SYSTEMS } from '../features/jml-sim/model'

@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router'
 import { Check, Clock } from 'lucide-react'
 import { MODULES, moduleBySlug } from '../data/modules'
 import { BlockRenderer } from '../components/BlockRenderer'

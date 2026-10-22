@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router'
 import { MODULE_INDEX } from '../data/moduleIndex'
 
 // Shown for unknown routes and for /learn/:slug when the slug is not a module.

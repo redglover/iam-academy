@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { renderToString } from 'react-dom/server'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { ProgressProvider } from '../features/progress/progress'
 import { MODULES } from '../data/modules'
 import { ModulePage } from '../pages/ModulePage'
