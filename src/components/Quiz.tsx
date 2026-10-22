@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, RotateCcw, X } from 'lucide-react'
 import type { Question } from '../data/types'
@@ -12,20 +12,33 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
   const [correct, setCorrect] = useState(0)
   const [finished, setFinished] = useState(false)
 
+  // Where keyboard focus goes once the next render has mounted it. The question heading mounts late (AnimatePresence waits
+  // for the exit animation), so focus is applied from ref callbacks rather than an effect.
+  const focusNext = useRef<'question' | 'feedback' | 'result' | null>(null)
+  const focusOnMount = (target: 'question' | 'feedback' | 'result') => (el: HTMLElement | null) => {
+    if (el && focusNext.current === target) {
+      focusNext.current = null
+      el.focus()
+    }
+  }
+
   const q = questions[i]
 
   const choose = (n: number) => {
     if (picked !== null) return
+    focusNext.current = 'feedback'
     setPicked(n)
     if (n === q.answer) setCorrect((c) => c + 1)
   }
 
   const next = () => {
     if (i + 1 < questions.length) {
+      focusNext.current = 'question'
       setI(i + 1)
       setPicked(null)
       return
     }
+    focusNext.current = 'result'
     setFinished(true)
     recordQuiz(slug, correct, questions.length)
     if (correct / questions.length >= 0.6) {
@@ -35,6 +48,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
   }
 
   const restart = () => {
+    focusNext.current = 'question'
     setI(0)
     setPicked(null)
     setCorrect(0)
@@ -44,7 +58,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
   if (finished) {
     const pass = correct / questions.length >= 0.6
     return (
-      <div className="panel p-6" role="status">
+      <div className="panel p-6" role="status" tabIndex={-1} ref={focusOnMount('result')}>
         <p className="font-display text-3xl font-bold">
           {correct} of {questions.length}
         </p>
@@ -70,35 +84,55 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
       </p>
       <AnimatePresence mode="wait">
         <motion.div key={i} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.18 }}>
-          <h3 className="mt-1 text-xl font-semibold sm:text-2xl">{q.q}</h3>
-          <div className="mt-4 grid gap-2" role="radiogroup" aria-label="Answers">
+          <h3 id={`${slug}-q`} className="mt-1 text-xl font-semibold sm:text-2xl" tabIndex={-1} ref={focusOnMount('question')}>
+            {q.q}
+          </h3>
+          {/* Plain buttons in a group: one click answers, so there is no radio-style selection to move with arrow keys. */}
+          <div className="mt-4 grid gap-2" role="group" aria-labelledby={`${slug}-q`}>
             {q.options.map((o, n) => {
               const isAnswer = n === q.answer
               const isPicked = n === picked
               const state =
                 picked === null ? 'border-line hover:border-key hover:bg-key/5' : isAnswer ? 'border-join bg-join/10' : isPicked ? 'border-leave bg-leave/10' : 'border-line opacity-60'
               return (
+                // aria-disabled rather than disabled after answering: the options stay focusable and readable, with their verdict.
                 <button
                   key={n}
-                  role="radio"
-                  aria-checked={isPicked}
-                  disabled={picked !== null}
+                  aria-disabled={picked !== null}
                   onClick={() => choose(n)}
-                  className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${state}`}
+                  className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${state} ${picked !== null ? 'cursor-default' : ''}`}
                 >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-current/30 font-display text-sm font-bold">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-current/30 font-display text-sm font-bold" aria-hidden>
                     {picked !== null && isAnswer ? <Check size={16} className="text-join" /> : picked !== null && isPicked ? <X size={16} className="text-leave" /> : String.fromCharCode(65 + n)}
                   </span>
-                  <span>{o}</span>
+                  <span>
+                    <span className="sr-only">{String.fromCharCode(65 + n)}: </span>
+                    {o}
+                    {picked !== null && (isAnswer || isPicked) && (
+                      <span className="sr-only">{isAnswer && isPicked ? ' (your answer, correct)' : isAnswer ? ' (correct answer)' : ' (your answer, wrong)'}</span>
+                    )}
+                  </span>
                 </button>
               )
             })}
           </div>
           {picked !== null && (
-            <div className="mt-4 rounded-xl bg-ink/[.04] p-4" aria-live="polite">
-              <p className="font-display font-semibold">{picked === q.answer ? 'Correct.' : 'Not quite.'}</p>
-              <p className="mt-1">{q.explain}</p>
-              <button className="btn btn-key mt-4" onClick={next} autoFocus>
+            // Focus moves here after answering, so the verdict and explanation are read first; Tab then reaches "Next".
+            <div
+              className="mt-4 rounded-xl bg-ink/[.04] p-4"
+              role="group"
+              aria-labelledby={`${slug}-verdict`}
+              aria-describedby={`${slug}-explain`}
+              tabIndex={-1}
+              ref={focusOnMount('feedback')}
+            >
+              <p id={`${slug}-verdict`} className="font-display font-semibold">
+                {picked === q.answer ? 'Correct.' : `Not quite. The answer is ${String.fromCharCode(65 + q.answer)}.`}
+              </p>
+              <p id={`${slug}-explain`} className="mt-1">
+                {q.explain}
+              </p>
+              <button className="btn btn-key mt-4" onClick={next}>
                 {i + 1 < questions.length ? 'Next question' : 'See result'}
               </button>
             </div>
