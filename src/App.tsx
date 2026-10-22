@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
-import { MODULES } from './data/modules'
 import { BADGES, ProgressProvider, levelFor, useProgress } from './features/progress/progress'
 import { useTheme } from './lib/theme'
 import { Home } from './pages/Home'
@@ -144,7 +143,7 @@ function Shell() {
 
 export default function App() {
   return (
-    <ProgressProvider totalModules={MODULES.length}>
+    <ProgressProvider>
       <HashRouter>
         <ScrollToTop />
         <Shell />
