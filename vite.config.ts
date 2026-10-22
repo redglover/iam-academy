@@ -1,5 +1,4 @@
-/// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { injectCsp } from './src/lib/csp'
 
@@ -12,9 +11,11 @@ export default defineConfig({
   ],
   base: process.env.GITHUB_ACTIONS ? '/iam-academy/' : '/',
   test: {
-    environment: 'node',
-    // UI smoke tests (*.test.tsx) need a DOM; engine tests stay in node.
-    environmentMatchGlobs: [['src/**/*.test.tsx', 'jsdom']],
     setupFiles: ['src/test/setup.ts'],
+    // UI smoke tests (*.test.tsx) need a DOM; engine tests stay in node.
+    projects: [
+      { extends: true, test: { name: 'engine', include: ['src/**/*.test.ts'], environment: 'node' } },
+      { extends: true, test: { name: 'ui', include: ['src/**/*.test.tsx'], environment: 'jsdom' } },
+    ],
   },
 })
