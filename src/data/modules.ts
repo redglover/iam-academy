@@ -595,8 +595,25 @@ Update-MgUser -UserId 'kari.lunde@fjordtech.no' -AccountEnabled:$false`,
           '**nonce** checked inside the ID token (stops replayed ID tokens).',
           'Validate ID tokens properly: signature, `iss`, `aud`, `exp`. Never trust a token just because it decodes.',
           'Keep tokens in memory in SPAs, not localStorage, where any injected script can read them.',
+          'A **Content Security Policy** that only allows your own scripts and only lets the page call Entra ID and the APIs it needs.',
           'Exact redirect URIs. No wildcards, no open redirects.',
           'Least privilege: `User.Read`, not `Directory.ReadWrite.All`, because you can.',
+        ],
+      },
+      {
+        t: 'code',
+        lang: 'html',
+        title: 'The Content Security Policy this site ships with',
+        code: `<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'sha256-Q5hTi/iNi+0bgIewmEVEtnaBTY6eunZWV1Ja2ex2K6k=';
+  connect-src 'self' https://login.microsoftonline.com https://graph.microsoft.com;
+  object-src 'none'; base-uri 'self'; form-action 'none'; …">`,
+        notes: [
+          '`script-src` runs only scripts from this site plus one inline script, pinned by its SHA-256 hash. An injected `<script>` or `onclick=` is refused.',
+          '`connect-src` is the token guard: even if a script does get in, the browser won’t let it send a stolen token anywhere except Entra ID and Graph.',
+          'GitHub Pages can’t set response headers, so this one is a `<meta>` tag. A real header is better where you have one: it also supports `frame-ancestors` (clickjacking) and `report-to`.',
+          'Redirecting to the sign-in page is a navigation, not a request, so `connect-src` doesn’t affect it. Only the token and Graph calls are fetches.',
         ],
       },
       {
