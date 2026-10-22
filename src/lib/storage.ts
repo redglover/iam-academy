@@ -8,6 +8,14 @@ export function load<T>(key: string, fallback: T): T {
   }
 }
 
+export function remove(key: string): void {
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    /* ignore */
+  }
+}
+
 export function save(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value))

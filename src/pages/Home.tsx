@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { MODULES } from '../data/modules'
@@ -47,28 +47,57 @@ function HeroBadge() {
 function ResetProgress() {
   const { xp, completed, badges, reset } = useProgress()
   const [confirming, setConfirming] = useState(false)
+  const [justReset, setJustReset] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const doneRef = useRef<HTMLParagraphElement>(null)
+  const returnFocus = useRef(false)
+
+  // Keep keyboard focus somewhere sensible: back on the trigger after Cancel, on the status line after a reset.
+  useEffect(() => {
+    if (justReset) doneRef.current?.focus()
+    else if (!confirming && returnFocus.current) triggerRef.current?.focus()
+    returnFocus.current = false
+  }, [confirming, justReset])
+
+  const cancel = () => {
+    returnFocus.current = true
+    setConfirming(false)
+  }
+
+  if (justReset)
+    return (
+      <p ref={doneRef} tabIndex={-1} role="status" className="text-sm font-semibold outline-none">
+        Progress reset.
+      </p>
+    )
   if (!xp && !completed.length && !badges.length) return null
   if (!confirming)
     return (
-      <button className="btn btn-ghost py-1.5 text-sm" onClick={() => setConfirming(true)}>
+      <button ref={triggerRef} className="btn btn-ghost py-1.5 text-sm" onClick={() => setConfirming(true)}>
         Reset progress
       </button>
     )
   return (
-    <div role="alertdialog" aria-labelledby="reset-confirm" className="flex flex-wrap items-center gap-2 rounded-badge border-2 border-leave p-3">
+    <div
+      role="alertdialog"
+      aria-labelledby="reset-confirm"
+      className="flex flex-wrap items-center gap-2 rounded-badge border-2 border-leave p-3"
+      onKeyDown={(e) => e.key === 'Escape' && cancel()}
+    >
       <p id="reset-confirm" className="text-sm">
-        Erase all XP, completed modules, quiz scores and badges? This can’t be undone.
+        Erase all XP, completed modules, quiz scores, lab missions and badges? This can’t be undone.
       </p>
       <button
         className="btn border-leave py-1.5 text-sm"
         onClick={() => {
           reset()
           setConfirming(false)
+          setJustReset(true)
         }}
       >
         Yes, reset
       </button>
-      <button className="btn btn-ghost py-1.5 text-sm" onClick={() => setConfirming(false)} autoFocus>
+      <button className="btn btn-ghost py-1.5 text-sm" onClick={cancel} autoFocus>
         Cancel
       </button>
     </div>
