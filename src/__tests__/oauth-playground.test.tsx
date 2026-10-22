@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { base64UrlEncode } from '../features/oauth/pkce'
 import { ProgressProvider } from '../features/progress/progress'
 import { OAuthPlayground } from '../pages/OAuthPlayground'
@@ -25,7 +25,7 @@ function signInCallback(tokenNonce: string, graph: () => Promise<Response>) {
     vi.fn(async (url: string) => (url.includes('/token') ? json({ token_type: 'Bearer', scope: 'openid', expires_in: 3600, access_token: 'opaque', id_token: idToken(tokenNonce) }) : graph())),
   )
   render(
-    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <MemoryRouter>
       <ProgressProvider>
         <OAuthPlayground />
       </ProgressProvider>
