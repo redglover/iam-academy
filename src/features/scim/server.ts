@@ -8,6 +8,7 @@ export const PATCH_SCHEMA = 'urn:ietf:params:scim:api:messages:2.0:PatchOp'
 export const ERROR_SCHEMA = 'urn:ietf:params:scim:api:messages:2.0:Error'
 
 // SCIM resources are open-ended JSON documents.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- arbitrary JSON; callers index into it freely
 export type Json = Record<string, any>
 
 export interface ScimRequest {
