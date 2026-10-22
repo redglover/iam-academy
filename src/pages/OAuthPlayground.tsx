@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Check, Copy, Eye, EyeOff, KeyRound, Loader2, LogIn, ShieldCheck } from 'lucide-react'
 import { base64UrlEncode, createPkcePair, randomString } from '../features/oauth/pkce'
-import { buildAuthorizeUrl, explainError, getMe, redeemCode, type OAuthError, type TokenResponse } from '../features/oauth/entra'
+import { buildAuthorizeUrl, explainError, getMe, redeemCode, validateIdToken, type IdTokenCheck, type OAuthError, type TokenResponse } from '../features/oauth/entra'
 import { decodeJwt, type DecodedJwt } from '../features/oauth/jwt'
 import { CLAIMS, formatClaim } from '../features/oauth/claims'
 import { CodeBlock } from '../components/CodeBlock'
@@ -34,7 +34,7 @@ interface Result {
   callback: Record<string, string>
   tokens: TokenResponse
   idToken?: DecodedJwt
-  nonceOk?: boolean
+  idTokenChecks?: IdTokenCheck[]
   me?: Record<string, unknown>
   meError?: string
 }
@@ -210,11 +210,18 @@ export function OAuthPlayground() {
         } catch {
           /* leave undefined */
         }
-        const r: Result = { authorizeUrl: pending.authorizeUrl, callback, tokens, idToken, nonceOk: idToken ? idToken.payload.nonce === pending.nonce : undefined }
+        const idTokenChecks = idToken ? validateIdToken(idToken.payload, pending) : undefined
+        // Like a state mismatch, a nonce mismatch means the tokens can't be trusted: discard them before using the access token.
+        if (idTokenChecks?.find((c) => c.claim === 'nonce')?.ok === false) {
+          setError({ error: 'nonce_mismatch', error_description: 'The nonce in the ID token doesn’t match the one this browser sent, so the tokens were discarded. That is the replay protection working. Start the sign-in from this page.' })
+          setStatus('error')
+          return
+        }
+        const r: Result = { authorizeUrl: pending.authorizeUrl, callback, tokens, idToken, idTokenChecks }
         try {
           r.me = await getMe(tokens.access_token)
         } catch (e) {
-          r.meError = JSON.stringify(e)
+          r.meError = e instanceof Error ? e.message : JSON.stringify(e)
         }
         setResult(r)
         setStatus('done')
@@ -333,9 +340,28 @@ export function OAuthPlayground() {
           {result.idToken && (
             <>
               <h3 className="text-lg font-semibold">4. Your ID token, decoded</h3>
-              <p className={`mt-1 text-sm font-semibold ${result.nonceOk ? 'text-join' : 'text-leave'}`}>
-                {result.nonceOk ? '✓ nonce matches the value sent in the request' : '✗ nonce does not match'}
-              </p>
+              {result.idTokenChecks && (
+                <div className="my-4 rounded-badge border border-line bg-paper p-4 text-sm">
+                  <p className="font-semibold">Validating it against the request this browser sent</p>
+                  <ul className="mt-2 space-y-1.5" aria-label="ID token validation">
+                    {result.idTokenChecks.map((c) => (
+                      <li key={c.claim} className="flex gap-2">
+                        <span className={`shrink-0 font-bold ${c.ok ? 'text-join' : 'text-leave'}`} aria-hidden>
+                          {c.ok ? '✓' : '✗'}
+                        </span>
+                        <span>
+                          <code>{c.claim}</code>
+                          <span className="sr-only">{c.ok ? ' passed' : ' failed'}</span>: {c.detail}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-muted">
+                    An app also verifies the signature with the tenant’s published keys. This page skips that: the token came straight from the token endpoint over
+                    HTTPS, which is enough for a browser app that only reads it.
+                  </p>
+                </div>
+              )}
               <ClaimsTable jwt={result.idToken} title="ID token: for this app, about you" />
             </>
           )}

@@ -41,6 +41,22 @@ describe('award()', () => {
     expect(result.current.xp).toBe(3 * 20 + 2 * 50)
   })
 
+  it('awards quiz XP only for the improvement on the best score', () => {
+    const { result } = setup()
+    act(() => result.current.recordQuiz('fundamentals', 2, 5))
+    const base = 2 * 20 + 50
+    expect(result.current.xp).toBe(base)
+    act(() => result.current.recordQuiz('fundamentals', 2, 5))
+    act(() => result.current.recordQuiz('fundamentals', 1, 5))
+    expect(result.current.xp).toBe(base)
+    expect(result.current.quizBest.fundamentals).toBe(40)
+    act(() => result.current.recordQuiz('fundamentals', 4, 5))
+    expect(result.current.xp).toBe(base + 2 * 20)
+    expect(result.current.quizBest.fundamentals).toBe(80)
+    act(() => result.current.recordQuiz('other', 1, 3))
+    expect(result.current.xp).toBe(base + 2 * 20 + 20)
+  })
+
   it('lets a badge be earned again after reset, also in the same batch', () => {
     const { result } = setup()
     act(() => result.current.award('oauth-real'))

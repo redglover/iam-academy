@@ -90,11 +90,16 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   const recordQuiz = useCallback(
     (slug: string, correct: number, total: number) => {
-      setState((s) => ({
-        ...s,
-        xp: s.xp + correct * 20,
-        quizBest: { ...s.quizBest, [slug]: Math.max(s.quizBest[slug] ?? 0, Math.round((correct / total) * 100)) },
-      }))
+      setState((s) => {
+        // quizBest is a percentage, so turn it back into answers to award only the improvement on the best.
+        const prevBest = s.quizBest[slug] ?? 0
+        const prevCorrect = Math.round((prevBest / 100) * total)
+        return {
+          ...s,
+          xp: s.xp + Math.max(0, correct - prevCorrect) * 20,
+          quizBest: { ...s.quizBest, [slug]: Math.max(prevBest, Math.round((correct / total) * 100)) },
+        }
+      })
       award('first-quiz')
       if (correct === total) award('perfect-quiz')
     },
