@@ -6,5 +6,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: process.env.GITHUB_ACTIONS ? '/iam-academy/' : '/',
-  test: { environment: 'node' },
+  test: {
+    environment: 'node',
+    // UI smoke tests (*.test.tsx) need a DOM; engine tests stay in node.
+    environmentMatchGlobs: [['src/**/*.test.tsx', 'jsdom']],
+    setupFiles: ['src/test/setup.ts'],
+  },
 })
