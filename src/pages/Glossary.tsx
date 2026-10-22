@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { GLOSSARY } from '../data/glossary'
-import { moduleBySlug } from '../data/modules'
+import { moduleMeta } from '../data/moduleIndex'
 
 export function Glossary() {
   const [q, setQ] = useState('')
@@ -34,7 +34,7 @@ export function Glossary() {
               {t.def}
               {t.module && (
                 <Link to={`/learn/${t.module}`} className="ml-2 whitespace-nowrap text-sm text-key hover:underline">
-                  {moduleBySlug(t.module)?.title}
+                  {moduleMeta(t.module)?.title}
                 </Link>
               )}
             </dd>

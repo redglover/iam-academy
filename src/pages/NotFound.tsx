@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { MODULES } from '../data/modules'
+import { MODULE_INDEX } from '../data/moduleIndex'
 
 // Shown for unknown routes and for /learn/:slug when the slug is not a module.
 export function NotFound({ slug }: { slug?: string }) {
@@ -24,7 +24,7 @@ export function NotFound({ slug }: { slug?: string }) {
         <Link to="/" className="btn btn-key px-5 py-3 text-lg">
           Back to home
         </Link>
-        <Link to={`/learn/${MODULES[0].slug}`} className="btn px-5 py-3 text-lg">
+        <Link to={`/learn/${MODULE_INDEX[0].slug}`} className="btn px-5 py-3 text-lg">
           Start the course
         </Link>
       </div>
