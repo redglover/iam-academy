@@ -1,6 +1,7 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, m } from 'framer-motion'
 import { Lock, Wifi } from 'lucide-react'
 import { ENTITLEMENTS, SYSTEMS, type Identity, type SystemId } from './model'
+import { loadDomMax } from '../../lib/motion'
 
 const STATUS: Record<Identity['status'], { label: string; strip: string; text: string }> = {
   none: { label: 'Not hired', strip: 'bg-line', text: 'text-muted' },
@@ -72,36 +73,38 @@ export function IdBadge({ who, compact = false }: { who: Identity; compact?: boo
         <div className="mt-4 border-t border-dashed border-line px-5 pb-5 pt-3">
           <p className="text-sm font-semibold">Access</p>
           <div className="mt-2 flex min-h-[3rem] flex-wrap content-start gap-1.5">
-            <AnimatePresence initial={false}>
-              {who.entitlements.length === 0 && (
-                <motion.span key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-sm text-muted">
-                  Nothing yet
-                </motion.span>
-              )}
-              {[...bySystem.entries()].flatMap(([sys, ents]) =>
-                ents.map((e) => {
-                  const ent = ENTITLEMENTS[e]
-                  const acc = who.accounts[sys]
-                  const off = acc && !acc.enabled
-                  return (
-                    <motion.span
-                      layout
-                      key={e}
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.6 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 26 }}
-                      className={`chip text-xs ${
-                        ent.risk === 'high' ? 'border-leave/50 bg-leave/10' : ent.risk === 'medium' ? 'border-move/50 bg-move/10' : 'border-line bg-fog'
-                      } ${off ? 'line-through opacity-50' : ''}`}
-                      title={`${SYSTEMS[sys].name}: ${ent.name} (${ent.risk} risk)`}
-                    >
-                      <span className="font-bold">{SYSTEMS[sys].short}</span> {ent.name}
-                    </motion.span>
-                  )
-                }),
-              )}
-            </AnimatePresence>
+            <LazyMotion features={loadDomMax}>
+              <AnimatePresence initial={false}>
+                {who.entitlements.length === 0 && (
+                  <m.span key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-sm text-muted">
+                    Nothing yet
+                  </m.span>
+                )}
+                {[...bySystem.entries()].flatMap(([sys, ents]) =>
+                  ents.map((e) => {
+                    const ent = ENTITLEMENTS[e]
+                    const acc = who.accounts[sys]
+                    const off = acc && !acc.enabled
+                    return (
+                      <m.span
+                        layout
+                        key={e}
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.6 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                        className={`chip text-xs ${
+                          ent.risk === 'high' ? 'border-leave/50 bg-leave/10' : ent.risk === 'medium' ? 'border-move/50 bg-move/10' : 'border-line bg-fog'
+                        } ${off ? 'line-through opacity-50' : ''}`}
+                        title={`${SYSTEMS[sys].name}: ${ent.name} (${ent.risk} risk)`}
+                      >
+                        <span className="font-bold">{SYSTEMS[sys].short}</span> {ent.name}
+                      </m.span>
+                    )
+                  }),
+                )}
+              </AnimatePresence>
+            </LazyMotion>
           </div>
         </div>
         <div className="flex items-center justify-between bg-ink px-5 py-2 text-xs text-paper">

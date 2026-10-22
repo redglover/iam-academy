@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m } from 'framer-motion'
 import { Check, RotateCcw, X } from 'lucide-react'
 import type { Question } from '../data/types'
 import { useProgress } from '../features/progress/progress'
@@ -69,7 +69,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
         Question {i + 1} of {questions.length}
       </p>
       <AnimatePresence mode="wait">
-        <motion.div key={i} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.18 }}>
+        <m.div key={i} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.18 }}>
           <h3 className="mt-1 text-xl font-semibold sm:text-2xl">{q.q}</h3>
           <div className="mt-4 grid gap-2" role="radiogroup" aria-label="Answers">
             {q.options.map((o, n) => {
@@ -103,7 +103,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
               </button>
             </div>
           )}
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </div>
   )
