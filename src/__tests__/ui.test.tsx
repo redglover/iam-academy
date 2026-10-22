@@ -56,6 +56,35 @@ describe('route smoke tests', () => {
   })
 })
 
+describe('reset progress', () => {
+  it('asks for confirmation before clearing progress on the home page', async () => {
+    localStorage.setItem('iam-progress-v1', JSON.stringify({ xp: 150, completed: ['jml'], quizBest: { jml: 100 }, badges: ['first-quiz'] }))
+    localStorage.setItem('iam-ca-missions', JSON.stringify(['m1', 'm2']))
+    window.location.hash = '#/'
+    render(<App />)
+    await screen.findAllByRole('heading', { level: 1, name: /Learn IAM by running/ })
+    expect(screen.getByText(/1 of \d+ unlocked/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByText(/1 of \d+ unlocked/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveFocus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }))
+    fireEvent.keyDown(screen.getByRole('alertdialog'), { key: 'Escape' })
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveFocus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, reset' }))
+    expect(screen.getByText(/0 of \d+ unlocked/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reset progress' })).toBeNull()
+    expect(screen.getByRole('status')).toHaveFocus()
+    expect(JSON.parse(localStorage.getItem('iam-progress-v1')!)).toMatchObject({ xp: 0, completed: [], badges: [] })
+    expect(localStorage.getItem('iam-ca-missions')).toBeNull()
+  })
+})
+
 describe('labs page loads labs on demand', () => {
   // A controllable IntersectionObserver: tests decide which cards are on screen.
   const observed = new Map<Element, IntersectionObserverCallback>()
