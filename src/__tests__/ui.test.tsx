@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import App from '../App'
 import { Lab } from '../components/BlockRenderer'
 import { ProgressProvider } from '../features/progress/progress'
@@ -52,5 +52,25 @@ describe('route smoke tests', () => {
     // Pages with labs (module pages, /labs) render them lazily; let them settle before checking for errors.
     await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
     done()
+  })
+})
+
+describe('reset progress', () => {
+  it('asks for confirmation before clearing progress on the home page', async () => {
+    localStorage.setItem('iam-progress-v1', JSON.stringify({ xp: 150, completed: ['jml'], quizBest: { jml: 100 }, badges: ['first-quiz'] }))
+    window.location.hash = '#/'
+    render(<App />)
+    await screen.findAllByRole('heading', { level: 1, name: /Learn IAM by running/ })
+    expect(screen.getByText(/1 of \d+ unlocked/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByText(/1 of \d+ unlocked/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, reset' }))
+    expect(screen.getByText(/0 of \d+ unlocked/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reset progress' })).toBeNull()
+    expect(JSON.parse(localStorage.getItem('iam-progress-v1')!)).toMatchObject({ xp: 0, completed: [], badges: [] })
   })
 })

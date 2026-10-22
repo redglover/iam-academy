@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { MODULES } from '../data/modules'
@@ -39,6 +40,37 @@ function HeroBadge() {
           'Press “Hire Ingrid” and watch IAM build her access.'
         )}
       </p>
+    </div>
+  )
+}
+
+function ResetProgress() {
+  const { xp, completed, badges, reset } = useProgress()
+  const [confirming, setConfirming] = useState(false)
+  if (!xp && !completed.length && !badges.length) return null
+  if (!confirming)
+    return (
+      <button className="btn btn-ghost py-1.5 text-sm" onClick={() => setConfirming(true)}>
+        Reset progress
+      </button>
+    )
+  return (
+    <div role="alertdialog" aria-labelledby="reset-confirm" className="flex flex-wrap items-center gap-2 rounded-badge border-2 border-leave p-3">
+      <p id="reset-confirm" className="text-sm">
+        Erase all XP, completed modules, quiz scores and badges? This can’t be undone.
+      </p>
+      <button
+        className="btn border-leave py-1.5 text-sm"
+        onClick={() => {
+          reset()
+          setConfirming(false)
+        }}
+      >
+        Yes, reset
+      </button>
+      <button className="btn btn-ghost py-1.5 text-sm" onClick={() => setConfirming(false)} autoFocus>
+        Cancel
+      </button>
     </div>
   )
 }
@@ -148,9 +180,12 @@ export function Home() {
 
       <section className="mx-auto max-w-6xl px-4">
         <h2 className="text-3xl font-bold sm:text-4xl">Badges</h2>
-        <p className="mt-2 text-muted">
-          {badges.length} of {Object.keys(BADGES).length} unlocked. Progress is saved in this browser only.
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-muted">
+            {badges.length} of {Object.keys(BADGES).length} unlocked. Progress is saved in this browser only.
+          </p>
+          <ResetProgress />
+        </div>
         <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {(Object.keys(BADGES) as BadgeId[]).map((id) => {
             const b = BADGES[id]
