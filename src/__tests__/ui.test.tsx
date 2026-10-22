@@ -39,7 +39,8 @@ const ROUTES: [string, string | RegExp][] = [
   ['/glossary', 'Glossary'],
   ['/cheat-sheet', 'Cheat sheet'],
   ['/oauth-playground', 'OAuth playground'],
-  ['/no-such-page', /Learn IAM by running/],
+  ['/no-such-page', 'Page not found'],
+  ['/learn/no-such-module', 'Module not found'],
   ...MODULES.map((m): [string, string] => [`/learn/${m.slug}`, m.title]),
 ]
 
