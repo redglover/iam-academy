@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import App from '../App'
 import { Lab } from '../components/BlockRenderer'
 import { ProgressProvider } from '../features/progress/progress'
@@ -82,5 +82,79 @@ describe('reset progress', () => {
     expect(screen.getByRole('status')).toHaveFocus()
     expect(JSON.parse(localStorage.getItem('iam-progress-v1')!)).toMatchObject({ xp: 0, completed: [], badges: [] })
     expect(localStorage.getItem('iam-ca-missions')).toBeNull()
+  })
+})
+
+describe('labs page loads labs on demand', () => {
+  // A controllable IntersectionObserver: tests decide which cards are on screen.
+  const observed = new Map<Element, IntersectionObserverCallback>()
+  function scrollIntoViewOf(id: string) {
+    const el = document.getElementById(id)!
+    act(() => observed.get(el)?.([{ target: el, isIntersecting: true } as unknown as IntersectionObserverEntry], {} as IntersectionObserver))
+  }
+  beforeEach(() => {
+    observed.clear()
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private cb: IntersectionObserverCallback) {}
+        observe(el: Element) { observed.set(el, this.cb) }
+        disconnect() { for (const [el, cb] of observed) if (cb === this.cb) observed.delete(el) }
+      },
+    )
+    window.location.hash = '#/labs'
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('renders every card without loading any lab', async () => {
+    render(<App />)
+    expect(await screen.findAllByRole('heading', { level: 2 })).toHaveLength(LAB_IDS.length)
+    expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length)
+    expect(document.querySelector('main .animate-pulse')).toBeNull()
+  })
+
+  it('loads a lab when it scrolls into view', async () => {
+    const done = watchConsoleErrors()
+    render(<App />)
+    scrollIntoViewOf('review')
+    expect(screen.queryByRole('button', { name: 'Open the Access review game' })).toBeNull()
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+    expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length - 1)
+    done()
+  })
+
+  it('loads a lab when the reader opens it', async () => {
+    const done = watchConsoleErrors()
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open the SAML inspector' }))
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+    expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length - 1)
+    done()
+  })
+
+  it('keeps keyboard focus when a focused Open lab button is replaced by its lab', async () => {
+    render(<App />)
+    const button = screen.getByRole('button', { name: 'Open the PIM lab' })
+    button.focus()
+    scrollIntoViewOf('pim')
+    expect(button).not.toBeInTheDocument()
+    expect(document.activeElement).toBe(document.getElementById('pim'))
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+  })
+
+  it('moves focus to the lab when Open lab is pressed', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open the RBAC lab' }))
+    expect(document.activeElement).toBe(document.getElementById('rbac'))
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+  })
+
+  it('leaves focus alone when a lab opens on scroll', async () => {
+    render(<App />)
+    const chip = screen.getByRole('link', { name: 'PIM lab' })
+    chip.focus()
+    scrollIntoViewOf('pim')
+    expect(document.activeElement).toBe(chip)
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
   })
 })
