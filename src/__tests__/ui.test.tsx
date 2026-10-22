@@ -22,7 +22,7 @@ describe('lab smoke tests', () => {
   it.each(LAB_IDS)('%s lab renders', async (id) => {
     const done = watchConsoleErrors()
     const { container } = render(
-      <ProgressProvider totalModules={MODULES.length}>
+      <ProgressProvider>
         <Lab id={id} />
       </ProgressProvider>,
     )
