@@ -102,4 +102,30 @@ describe('labs page loads labs on demand', () => {
     expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length - 1)
     done()
   })
+
+  it('keeps keyboard focus when a focused Open lab button is replaced by its lab', async () => {
+    render(<App />)
+    const button = screen.getByRole('button', { name: 'Open the PIM lab' })
+    button.focus()
+    scrollIntoViewOf('pim')
+    expect(button).not.toBeInTheDocument()
+    expect(document.activeElement).toBe(document.getElementById('pim'))
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+  })
+
+  it('moves focus to the lab when Open lab is pressed', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open the RBAC lab' }))
+    expect(document.activeElement).toBe(document.getElementById('rbac'))
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+  })
+
+  it('leaves focus alone when a lab opens on scroll', async () => {
+    render(<App />)
+    const chip = screen.getByRole('link', { name: 'PIM lab' })
+    chip.focus()
+    scrollIntoViewOf('pim')
+    expect(document.activeElement).toBe(chip)
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+  })
 })
