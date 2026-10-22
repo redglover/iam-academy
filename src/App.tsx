@@ -1,16 +1,18 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
 import { BADGES, ProgressProvider, levelFor, useProgress } from './features/progress/progress'
 import { useTheme } from './lib/theme'
 import { Home } from './pages/Home'
-import { ModulePage } from './pages/ModulePage'
-import { Glossary } from './pages/Glossary'
-import { CheatSheet } from './pages/CheatSheet'
-import { Labs } from './pages/Labs'
-import { OAuthPlayground } from './pages/OAuthPlayground'
 import { NotFound } from './pages/NotFound'
+
+// Home is the landing page and stays in the main bundle; the other pages load on first visit.
+const ModulePage = lazy(() => import('./pages/ModulePage').then((m) => ({ default: m.ModulePage })))
+const Glossary = lazy(() => import('./pages/Glossary').then((m) => ({ default: m.Glossary })))
+const CheatSheet = lazy(() => import('./pages/CheatSheet').then((m) => ({ default: m.CheatSheet })))
+const Labs = lazy(() => import('./pages/Labs').then((m) => ({ default: m.Labs })))
+const OAuthPlayground = lazy(() => import('./pages/OAuthPlayground').then((m) => ({ default: m.OAuthPlayground })))
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -60,7 +62,7 @@ function BadgeToast() {
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4" aria-live="polite">
       <AnimatePresence>
         {lastBadge && (
-          <motion.div
+          <m.div
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
@@ -73,7 +75,7 @@ function BadgeToast() {
               <span className="block font-display font-bold">Badge unlocked: {BADGES[lastBadge].name}</span>
               <span className="text-sm text-muted">+50 XP. {BADGES[lastBadge].how}.</span>
             </span>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -120,15 +122,17 @@ function Shell() {
         </div>
       </header>
       <main id="main">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/learn/:slug" element={<ModulePage />} />
-          <Route path="/labs" element={<Labs />} />
-          <Route path="/glossary" element={<Glossary />} />
-          <Route path="/cheat-sheet" element={<CheatSheet />} />
-          <Route path="/oauth-playground" element={<OAuthPlayground />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div className="mx-auto mt-10 h-64 max-w-6xl animate-pulse rounded-[1.75rem] bg-line/40" />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/learn/:slug" element={<ModulePage />} />
+            <Route path="/labs" element={<Labs />} />
+            <Route path="/glossary" element={<Glossary />} />
+            <Route path="/cheat-sheet" element={<CheatSheet />} />
+            <Route path="/oauth-playground" element={<OAuthPlayground />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       <footer className="no-print mt-24 border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-6 text-sm text-muted">
@@ -143,11 +147,13 @@ function Shell() {
 
 export default function App() {
   return (
-    <ProgressProvider>
-      <HashRouter>
-        <ScrollToTop />
-        <Shell />
-      </HashRouter>
-    </ProgressProvider>
+    <LazyMotion features={domAnimation} strict>
+      <ProgressProvider>
+        <HashRouter>
+          <ScrollToTop />
+          <Shell />
+        </HashRouter>
+      </ProgressProvider>
+    </LazyMotion>
   )
 }

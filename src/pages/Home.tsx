@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
-import { MODULES } from '../data/modules'
+import { MODULE_INDEX } from '../data/moduleIndex'
 import { PERSONAS, SYSTEMS } from '../features/jml-sim/model'
 import { IdBadge } from '../features/jml-sim/IdBadge'
 import { useJmlPlayer } from '../features/jml-sim/useJmlPlayer'
@@ -121,7 +121,7 @@ const SKILLS: { skill: string; where: string; slug: string }[] = [
 export function Home() {
   const { completed, xp, badges } = useProgress()
   const lvl = levelFor(xp)
-  const nextModule = MODULES.find((m) => !completed.includes(m.slug)) ?? MODULES[0]
+  const nextModule = MODULE_INDEX.find((m) => !completed.includes(m.slug)) ?? MODULE_INDEX[0]
 
   return (
     <>
@@ -164,7 +164,7 @@ export function Home() {
             </div>
           </div>
           <ol className="mt-8 grid gap-3 md:grid-cols-2">
-            {MODULES.map((m, i) => {
+            {MODULE_INDEX.map((m, i) => {
               const done = completed.includes(m.slug)
               return (
                 <li key={m.slug}>
