@@ -8,6 +8,8 @@ export interface LogEntry {
   steps: Step[]
 }
 
+const NO_STEPS: Step[] = []
+
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /** Plays a JML plan one step at a time so learners can follow along. */
@@ -18,7 +20,7 @@ export function useJmlPlayer(persona: Persona, speedMs = 420) {
   const timer = useRef<number>()
 
   const current = log.length ? log[log.length - 1] : null
-  const steps = current?.steps ?? []
+  const steps = current?.steps ?? NO_STEPS
   const who = runAll(base, steps.slice(0, shown))
   const playing = shown < steps.length
 

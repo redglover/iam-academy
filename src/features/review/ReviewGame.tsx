@@ -72,7 +72,7 @@ export function ReviewGame() {
       award('review-ace')
       celebrate()
     }
-  }, [state]) // run once when the round ends
+  }, [state, caught, totalRisky, wrongRevokes, addXp, award]) // decisions are locked once done, so this runs once per round
 
   const start = () => {
     setDecisions({})
