@@ -77,7 +77,7 @@ export const MODULE_INDEX: ModuleMeta[] = [
     slug: 'privileged',
     title: 'Privileged access',
     tagline: 'Admin rights are the crown jewels. Treat them that way.',
-    minutes: 8,
+    minutes: 11,
     tone: 'leave',
   },
   {
@@ -91,7 +91,7 @@ export const MODULE_INDEX: ModuleMeta[] = [
     slug: 'compliance',
     title: 'Compliance and the Norwegian context',
     tagline: 'GDPR, NSM, ISO 27001: what auditors will ask you for.',
-    minutes: 8,
+    minutes: 10,
     tone: 'key',
   },
 ]

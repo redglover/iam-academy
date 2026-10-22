@@ -73,6 +73,12 @@ export const MODULES: Module[] = [
         answer: 1,
         explain: 'Proving who you are is authentication. What you can do after signing in is authorization.',
       },
+      {
+        q: 'Admins should only get Global Administrator for a few hours when they need it. Which area of IAM handles that?',
+        options: ['Directory', 'Provisioning', 'Identity governance (IGA)', 'Privileged access (PAM)'],
+        answer: 3,
+        explain: 'Admin accounts, vaulting and just-in-time elevation are the job of privileged access management, for example Entra PIM.',
+      },
     ],
   },
   {
@@ -147,6 +153,17 @@ export const MODULES: Module[] = [
         options: ['An orphan account', 'A service account', 'A break-glass account', 'A guest account'],
         answer: 0,
         explain: 'It has no living owner. Finding orphans is a standard reconciliation report in every IGA tool.',
+      },
+      {
+        q: 'A sign-in comes from a laptop on the office network. What does zero trust say about it?',
+        options: [
+          'Trust it: it is inside the perimeter',
+          'Evaluate it like any other request: identity, device health, location and risk',
+          'Block it until IT approves the device',
+          'Skip MFA, since the network already proves who it is',
+        ],
+        answer: 1,
+        explain: '“Never trust, always verify.” Network location proves nothing on its own. Conditional Access evaluates every request.',
       },
     ],
   },
@@ -307,6 +324,23 @@ export const MODULES: Module[] = [
         options: ['Role explosion', 'Role mining', 'Least privilege', 'Attestation'],
         answer: 0,
         explain: 'When every slight difference becomes a new role, the model becomes as hard to manage as direct assignments. ABAC rules or role parameters can help.',
+      },
+      {
+        q: 'Sales apps are assigned to a dynamic group with the rule user.department -eq "Sales". HR moves Ola from Sales to Finance. What happens?',
+        options: [
+          'Nothing until someone files a ticket',
+          'Ola keeps the Sales apps until the next access review',
+          'Ola leaves the group automatically and loses the Sales apps',
+          'The group is deleted',
+        ],
+        answer: 2,
+        explain: 'Dynamic membership is recalculated from attributes. When HR changes the department, the mover is handled without anyone touching the group.',
+      },
+      {
+        q: 'You analyse who has what today and find that 90 % of Finance has the same six groups. Which approach is this?',
+        options: ['Top-down role mining', 'Bottom-up role mining', 'Attestation', 'Separation of duties'],
+        answer: 1,
+        explain: 'Bottom-up mining starts from existing access and looks for clusters. Top-down starts from interviews about what each job needs. Real projects use both.',
       },
     ],
   },
@@ -1056,6 +1090,23 @@ Invoke-RestMethod "$base/Users/u-0001" -Method Patch -Headers $headers -Body $bo
         answer: 2,
         explain: 'Review frequency should match risk.',
       },
+      {
+        q: 'A reviewer clicks “revoke” on an access line. What should happen next?',
+        options: [
+          'The revocation is carried out automatically and recorded as evidence',
+          'The reviewer emails the system owner and asks them to remove it',
+          'Nothing until the next review cycle',
+          'The user is asked whether they still need it',
+        ],
+        answer: 0,
+        explain: 'A review is only proof if its decisions are executed. Automatic revocation closes the loop and leaves an audit trail.',
+      },
+      {
+        q: 'Which is a good target for time to deprovision a leaver?',
+        options: ['Within 30 days', 'At the next quarterly review', 'Under 1 hour from the HR end date', 'When the manager files a ticket'],
+        answer: 2,
+        explain: 'Leavers are the highest-risk lifecycle event. Driven by HR data, access should be gone within an hour of the end date.',
+      },
     ],
   },
   {
@@ -1223,6 +1274,7 @@ Get-MgIdentityConditionalAccessPolicy -All | ForEach-Object {
         t: 'p',
         text: 'A compromised normal user is an incident. A compromised **Global Administrator** is a catastrophe. Privileged Access Management (PAM) shrinks the number of admins, the time they hold power, and the paths an attacker can take to them.',
       },
+      { t: 'h', text: 'The core controls' },
       {
         t: 'list',
         items: [
@@ -1232,6 +1284,27 @@ Get-MgIdentityConditionalAccessPolicy -All | ForEach-Object {
           '**Break-glass accounts**: two emergency cloud-only accounts, excluded from Conditional Access, with long secrets in a safe and alerting on every sign-in.',
           '**Phishing-resistant MFA**: FIDO2 keys or passkeys for all admin roles.',
         ],
+      },
+      { t: 'h', text: 'Just enough administration: pick the smallest role' },
+      {
+        t: 'table',
+        head: ['Task', 'Role that is enough', 'Not this'],
+        rows: [
+          ['Reset passwords for normal users', 'Helpdesk Administrator', 'Global Administrator'],
+          ['Create users and manage groups', 'User Administrator', 'Global Administrator'],
+          ['Configure enterprise apps and SSO', 'Application Administrator', 'Global Administrator'],
+          ['Assign admin roles to others', 'Privileged Role Administrator (rare, tightly held)', 'Anyone who just asks'],
+        ],
+      },
+      { t: 'h', text: 'Vaulting and session control' },
+      {
+        t: 'p',
+        text: 'Some privileged credentials can’t be replaced by JIT roles: the local admin on a server, the root account of a database, a network device. A **PAM vault** (CyberArk, Delinea) stores them so nobody knows them. An admin *checks out* the credential for a task, the vault **rotates it after use**, and the session can be **recorded** for later review. The password on a sticky note becomes a password nobody has seen.',
+      },
+      { t: 'h', text: 'Protect the path to admin' },
+      {
+        t: 'p',
+        text: 'Attackers rarely steal an admin account directly. They compromise a laptop the admin signed in on, then reuse what they find there. **Tiering** separates the systems that control identity (Tier 0: Entra ID, AD domain controllers, PIM) from servers and from user devices, and admin credentials never touch a lower tier. **Privileged access workstations (PAWs)** are hardened devices used only for admin work: no email, no web browsing.',
       },
       {
         t: 'code',
@@ -1268,6 +1341,34 @@ Get-MgDirectoryRoleMember -DirectoryRoleId $ga.Id |
         options: ['Cloud-only, excluded from Conditional Access, monitored, rarely used', 'Synced from on-prem AD', 'Used daily by the IT manager', 'Deleted'],
         answer: 0,
         explain: 'They exist for when everything else is broken, including federation and Conditional Access. Every sign-in should alert.',
+      },
+      {
+        q: 'A service desk agent needs to reset passwords for normal users. Which role follows just enough administration?',
+        options: ['Global Administrator', 'Privileged Role Administrator', 'Helpdesk Administrator', 'Application Administrator'],
+        answer: 2,
+        explain: 'Helpdesk Administrator can reset passwords for non-admin users and nothing much more. Global Administrator would be far beyond the task.',
+      },
+      {
+        q: 'An admin checks out the root password of a database from a PAM vault. What should happen when the task is done?',
+        options: [
+          'The admin writes it down for next time',
+          'The vault rotates the password so the checked-out value no longer works',
+          'The password is emailed to the team',
+          'Nothing; vault passwords never change',
+        ],
+        answer: 1,
+        explain: 'Rotation after use means a known credential has a short life. Nobody holds a standing secret.',
+      },
+      {
+        q: 'Why should admins use a privileged access workstation instead of their everyday laptop?',
+        options: [
+          'It is faster',
+          'Email and browsing on the everyday laptop expose it to phishing and malware, and admin credentials used there can be stolen',
+          'Licences require it',
+          'PIM only works on PAWs',
+        ],
+        answer: 1,
+        explain: 'Credentials are as safe as the device they are used on. A PAW keeps admin sessions away from the riskiest activities.',
       },
     ],
   },
@@ -1434,6 +1535,7 @@ New-MgRoleManagementDirectoryRoleAssignmentScheduleRequest -BodyParameter @{
         t: 'p',
         text: 'Compliance frameworks rarely tell you *how* to do IAM, but they all expect the same outcomes: access is approved, appropriate, reviewed and removed on time, and you can **prove** it.',
       },
+      { t: 'h', text: 'What the frameworks expect' },
       {
         t: 'table',
         head: ['Framework', 'What it expects from IAM'],
@@ -1461,6 +1563,16 @@ New-MgRoleManagementDirectoryRoleAssignmentScheduleRequest -BodyParameter @{
           'SoD ruleset and any approved exceptions with expiry.',
         ],
       },
+      { t: 'h', text: 'Keep the logs long enough' },
+      {
+        t: 'p',
+        text: 'Evidence only exists if the logs still exist. Entra ID keeps sign-in and audit logs for **30 days** (7 days without a P1/P2 licence), but auditors ask about the whole year. Export the logs to **Log Analytics, Microsoft Sentinel or another SIEM** and set a retention period that matches your audit cycle and legal requirements. Under GDPR, logs about who accessed personal data are personal data too: keep them as long as needed, not forever.',
+      },
+      { t: 'h', text: 'Exceptions are allowed, undocumented ones are not' },
+      {
+        t: 'p',
+        text: 'Real organizations always have exceptions: a small team where one person must both register and approve, a legacy system that can’t do MFA. Auditors accept that, if every exception has an **owner**, a **reason**, a **compensating control** (for example a monthly review of all payments the person approved) and an **expiry date** after which it is reassessed.',
+      },
     ],
     quiz: [
       {
@@ -1474,6 +1586,28 @@ New-MgRoleManagementDirectoryRoleAssignmentScheduleRequest -BodyParameter @{
         options: ['Her manager’s email', 'A screenshot of her disabled account today', 'HR end date and the timestamped disable/removal entries in the audit log', 'The leaver policy document'],
         answer: 2,
         explain: 'Evidence is about timing: the event and the action, with timestamps, from the system of record.',
+      },
+      {
+        q: 'An auditor asks for sign-in evidence from eight months ago. Your logs only live in Entra ID. What is the problem?',
+        options: [
+          'None: Entra ID keeps sign-in logs forever',
+          'Entra ID only keeps sign-in logs for about 30 days, so they should have been exported to a SIEM or Log Analytics',
+          'Sign-in logs are not allowed under GDPR',
+          'Auditors may not see sign-in logs',
+        ],
+        answer: 1,
+        explain: 'Built-in retention is short. Export logs and set retention to match your audit cycle, or the evidence is gone.',
+      },
+      {
+        q: 'In a small finance team, one person must both register and approve payments. What makes this acceptable to an auditor?',
+        options: [
+          'A verbal OK from the CFO',
+          'Nothing: SoD conflicts are never allowed',
+          'A documented exception with owner, reason, compensating control and expiry date',
+          'Removing the person from the SoD ruleset',
+        ],
+        answer: 2,
+        explain: 'Exceptions are normal. Undocumented, unmitigated and permanent ones are findings.',
       },
     ],
   },
