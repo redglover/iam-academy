@@ -51,7 +51,7 @@ Paste the client ID (and tenant ID) into the playground. No client secret is nee
 npm ci            # installs the exact versions from package-lock.json
 npm run dev       # http://localhost:5173
 npm run lint      # ESLint (incl. react-hooks rules)
-npm test          # engine unit tests (Vitest)
+npm test          # engine unit tests + UI smoke tests (Vitest, jsdom)
 npm run build     # typecheck + production build
 ```
 
