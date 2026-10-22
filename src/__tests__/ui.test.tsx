@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import App from '../App'
 import { Lab } from '../components/BlockRenderer'
 import { ProgressProvider } from '../features/progress/progress'
@@ -51,6 +51,54 @@ describe('route smoke tests', () => {
     expect(await screen.findAllByRole('heading', { level: 1, name: heading })).not.toHaveLength(0)
     // Pages with labs (module pages, /labs) render them lazily; let them settle before checking for errors.
     await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+    done()
+  })
+})
+
+describe('labs page loads labs on demand', () => {
+  // A controllable IntersectionObserver: tests decide which cards are on screen.
+  const observed = new Map<Element, IntersectionObserverCallback>()
+  function scrollIntoViewOf(id: string) {
+    const el = document.getElementById(id)!
+    act(() => observed.get(el)?.([{ target: el, isIntersecting: true } as unknown as IntersectionObserverEntry], {} as IntersectionObserver))
+  }
+  beforeEach(() => {
+    observed.clear()
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private cb: IntersectionObserverCallback) {}
+        observe(el: Element) { observed.set(el, this.cb) }
+        disconnect() { for (const [el, cb] of observed) if (cb === this.cb) observed.delete(el) }
+      },
+    )
+    window.location.hash = '#/labs'
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('renders every card without loading any lab', async () => {
+    render(<App />)
+    expect(await screen.findAllByRole('heading', { level: 2 })).toHaveLength(LAB_IDS.length)
+    expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length)
+    expect(document.querySelector('main .animate-pulse')).toBeNull()
+  })
+
+  it('loads a lab when it scrolls into view', async () => {
+    const done = watchConsoleErrors()
+    render(<App />)
+    scrollIntoViewOf('review')
+    expect(screen.queryByRole('button', { name: 'Open the Access review game' })).toBeNull()
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+    expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length - 1)
+    done()
+  })
+
+  it('loads a lab when the reader opens it', async () => {
+    const done = watchConsoleErrors()
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open the SAML inspector' }))
+    await vi.waitFor(() => expect(document.querySelector('main .animate-pulse')).toBeNull(), { timeout: 5000 })
+    expect(screen.getAllByRole('button', { name: /^Open the / })).toHaveLength(LAB_IDS.length - 1)
     done()
   })
 })
