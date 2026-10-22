@@ -8,8 +8,7 @@ updates:
       npm-patch-minor:
         update-types: [patch, minor]
     ignore:
-      # Tailwind 4 and newer Vite majors need a different setup; upgrade those by hand.
-      - dependency-name: tailwindcss
-        update-types: [version-update:semver-major]
-      - dependency-name: vite
+      # Major versions are upgraded by hand: they often need code or setup changes
+      # (e.g. Tailwind 4, newer Vite, React Router 7) and testing in the browser.
+      - dependency-name: "*"
         update-types: [version-update:semver-major]
