@@ -90,6 +90,9 @@ function CopyField({ value, label }: { value: string; label: string }) {
   return (
     <span className="mt-1 flex items-center gap-2">
       <code className="min-w-0 flex-1 truncate rounded-lg border border-line bg-fog px-2.5 py-1.5 text-sm">{value}</code>
+      <span className="sr-only" aria-live="polite">
+        {ok ? 'Copied' : ''}
+      </span>
       <button
         className="btn py-1 text-sm"
         aria-label={`Copy ${label}`}
@@ -111,7 +114,7 @@ function CopyField({ value, label }: { value: string; label: string }) {
 
 function ClaimsTable({ jwt, title }: { jwt: DecodedJwt; title: string }) {
   return (
-    <div className="my-4 overflow-x-auto rounded-badge border border-line bg-paper">
+    <div className="my-4 overflow-x-auto rounded-badge border border-line bg-paper" tabIndex={0} role="group" aria-label={title}>
       <p className="border-b border-line px-4 py-2.5 font-display font-semibold">{title}</p>
       <table className="w-full min-w-[560px] text-left text-sm">
         <tbody>
@@ -135,7 +138,7 @@ function Section({ n, title, children }: { n: number; title: string; children: R
   return (
     <section className="mt-12">
       <h2 className="flex items-center gap-3 text-2xl font-bold sm:text-[1.75rem]">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-key font-display text-lg text-white">{n}</span>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-key font-display text-lg text-on">{n}</span>
         {title}
       </h2>
       <div className="mt-4">{children}</div>
@@ -322,7 +325,7 @@ export function OAuthPlayground() {
               <dt className="font-semibold">access_token</dt>
               <dd className="min-w-0">
                 <span className="break-all font-mono text-xs">{showToken ? result.tokens.access_token : `${result.tokens.access_token.slice(0, 16)}… (${result.tokens.access_token.length} chars)`}</span>
-                <button className="ml-2 inline-flex items-center gap-1 text-key" onClick={() => setShowToken((v) => !v)}>
+                <button className="ml-2 inline-flex items-center gap-1 text-key" onClick={() => setShowToken((v) => !v)} aria-label={showToken ? 'Hide access token' : 'Show access token'}>
                   {showToken ? <EyeOff size={14} /> : <Eye size={14} />} {showToken ? 'Hide' : 'Show'}
                 </button>
               </dd>
@@ -397,17 +400,23 @@ export function OAuthPlayground() {
               value={config.clientId}
               onChange={(e) => setConfig((c) => ({ ...c, clientId: e.target.value }))}
               placeholder="00000000-0000-0000-0000-000000000000"
-              className="mt-1 w-full rounded-lg border-2 border-line bg-paper px-3 py-2 font-mono text-sm focus:border-key"
+              aria-invalid={!!config.clientId && !validClientId}
+              aria-describedby={config.clientId && !validClientId ? 'client-id-error' : undefined}
+              className="mt-1 w-full rounded-lg border-2 border-muted/70 bg-paper px-3 py-2 font-mono text-sm focus:border-key"
               spellCheck={false}
             />
-            {config.clientId && !validClientId && <span className="mt-1 block text-sm text-leave">A client ID is a GUID like 6731de76-14a6-49ae-97bc-6eba6914391e.</span>}
+            {config.clientId && !validClientId && (
+              <span id="client-id-error" className="mt-1 block text-sm text-leave">
+                A client ID is a GUID like 6731de76-14a6-49ae-97bc-6eba6914391e.
+              </span>
+            )}
           </label>
           <label className="block">
             <span className="font-semibold">Tenant</span>
             <input
               value={config.tenant}
               onChange={(e) => setConfig((c) => ({ ...c, tenant: e.target.value }))}
-              className="mt-1 w-full rounded-lg border-2 border-line bg-paper px-3 py-2 font-mono text-sm focus:border-key"
+              className="mt-1 w-full rounded-lg border-2 border-muted/70 bg-paper px-3 py-2 font-mono text-sm focus:border-key"
               spellCheck={false}
             />
             <span className="mt-1 block text-sm text-muted">
@@ -467,11 +476,15 @@ export function OAuthPlayground() {
             onChange={(e) => setPasted(e.target.value)}
             rows={4}
             placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOi…"
-            className="w-full rounded-xl border-2 border-line bg-paper p-3 font-mono text-xs focus:border-key"
+            className="w-full rounded-xl border-2 border-muted/70 bg-paper p-3 font-mono text-xs focus:border-key"
             spellCheck={false}
           />
         </label>
-        {pastedError && <p className="mt-2 text-sm text-leave">{pastedError}</p>}
+        {pastedError && (
+          <p className="mt-2 text-sm text-leave" role="alert">
+            {pastedError}
+          </p>
+        )}
         {pastedJwt && <ClaimsTable jwt={pastedJwt} title="Decoded token (signature not verified)" />}
         {!pasted && (
           <button

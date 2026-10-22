@@ -12,7 +12,7 @@ export function Callout({ kind, title, text }: { kind: keyof typeof STYLES; titl
   const s = STYLES[kind]
   const Icon = s.icon
   return (
-    <aside className={`my-6 flex max-w-[72ch] gap-3 rounded-badge border-l-4 border p-4 ${s.cls}`}>
+    <div role="note" className={`my-6 flex max-w-[72ch] gap-3 rounded-badge border-l-4 border p-4 ${s.cls}`}>
       <Icon className={`mt-0.5 shrink-0 ${s.ic}`} size={20} aria-hidden />
       <div>
         <p className="font-display font-semibold">{title}</p>
@@ -20,6 +20,6 @@ export function Callout({ kind, title, text }: { kind: keyof typeof STYLES; titl
           <Inline text={text} />
         </p>
       </div>
-    </aside>
+    </div>
   )
 }

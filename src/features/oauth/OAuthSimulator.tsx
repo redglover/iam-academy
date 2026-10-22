@@ -77,22 +77,24 @@ export function OAuthSimulator() {
             />
           )}
         </div>
-        <label className="block">
-          <span className="font-semibold">Attack</span>
-          <select
-            value={opts.attack}
-            onChange={(e) => set({ attack: e.target.value as AttackId })}
-            className="mt-1.5 w-full rounded-lg border-2 border-line bg-paper px-2 py-2 font-semibold"
-          >
-            <option value="none">No attack, the normal flow</option>
-            {FLOWS[flow].attacks.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.label}
-              </option>
-            ))}
-          </select>
+        <div>
+          <label className="block">
+            <span className="font-semibold">Attack</span>
+            <select
+              value={opts.attack}
+              onChange={(e) => set({ attack: e.target.value as AttackId })}
+              className="mt-1.5 w-full rounded-lg border-2 border-muted/70 bg-paper px-2 py-2 font-semibold"
+            >
+              <option value="none">No attack, the normal flow</option>
+              {FLOWS[flow].attacks.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </label>
           {opts.attack !== 'none' && <AttackVerdict result={result} />}
-        </label>
+        </div>
       </div>
 
       <SequenceDiagram actors={actors} steps={steps} current={player.i} onSelect={player.setI} />

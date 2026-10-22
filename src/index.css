@@ -8,11 +8,14 @@
   --ink: 26 30 58;
   --muted: 88 96 128;
   --line: 214 221 235;
-  --key: 47 91 255;
-  --join: 18 150 104;
-  --move: 214 140 6;
-  --leave: 222 60 66;
-  --auto: 124 92 255;
+  /* Status colours are dark enough for 4.5:1 text on paper, fog and their tints (WCAG 1.4.3). */
+  --key: 38 78 232;
+  --join: 3 114 78;
+  --move: 158 79 0;
+  --leave: 196 38 46;
+  --auto: 104 60 226;
+  /* Text on a solid status-colour fill. */
+  --on: 255 255 255;
   color-scheme: light;
 }
 [data-theme='dark'] {
@@ -26,6 +29,7 @@
   --move: 251 191 36;
   --leave: 255 107 112;
   --auto: 167 145 255;
+  --on: 17 20 38;
   color-scheme: dark;
 }
 
@@ -45,10 +49,11 @@
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl border-2 border-ink px-4 py-2 font-display font-semibold
-      text-ink bg-paper shadow-lift transition-transform active:translate-y-[2px] active:shadow-none disabled:opacity-40 disabled:pointer-events-none;
+      text-ink bg-paper shadow-lift transition-transform active:translate-y-[2px] active:shadow-none disabled:opacity-40 disabled:pointer-events-none
+      aria-disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:active:translate-y-0 aria-disabled:active:shadow-lift;
   }
-  .btn-key { @apply bg-key text-white border-ink; }
-  [data-theme='dark'] .btn-key { @apply text-fog; }
+  .btn-key { @apply bg-key text-on border-ink; }
+
   .btn-ghost { @apply border-transparent shadow-none bg-transparent hover:bg-ink/5; }
   .panel { @apply rounded-badge border border-line bg-paper; }
   .chip {

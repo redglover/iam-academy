@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { HashRouter, NavLink, Route, Routes, useLocation, Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { Moon, Sun } from 'lucide-react'
 import { MODULES } from './data/modules'
 import { BADGES, ProgressProvider, levelFor, useProgress } from './features/progress/progress'
@@ -144,10 +144,13 @@ function Shell() {
 export default function App() {
   return (
     <ProgressProvider totalModules={MODULES.length}>
-      <HashRouter>
-        <ScrollToTop />
-        <Shell />
-      </HashRouter>
+      {/* Skip transform and layout animations for people who ask the OS for reduced motion. */}
+      <MotionConfig reducedMotion="user">
+        <HashRouter>
+          <ScrollToTop />
+          <Shell />
+        </HashRouter>
+      </MotionConfig>
     </ProgressProvider>
   )
 }

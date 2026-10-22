@@ -45,7 +45,7 @@ export function IdBadge({ who, compact = false }: { who: Identity; compact?: boo
             <p className="text-muted">{who.status === 'none' ? 'Candidate' : who.title}</p>
             <p className="text-sm text-muted">{who.department ?? 'No department'}</p>
             <p className={`mt-1 inline-flex items-center gap-1.5 text-sm font-bold ${s.text}`}>
-              <span className={`h-2 w-2 rounded-full ${s.strip}`} />
+              <span className={`h-2 w-2 rounded-full ${s.strip}`} aria-hidden />
               {s.label}
               {who.type === 'contractor' && <span className="font-normal text-muted">, contractor</span>}
             </p>
@@ -97,6 +97,9 @@ export function IdBadge({ who, compact = false }: { who: Identity; compact?: boo
                       title={`${SYSTEMS[sys].name}: ${ent.name} (${ent.risk} risk)`}
                     >
                       <span className="font-bold">{SYSTEMS[sys].short}</span> {ent.name}
+                      <span className="sr-only">
+                        , {ent.risk} risk{off ? ', account disabled' : ''}
+                      </span>
                     </motion.span>
                   )
                 }),

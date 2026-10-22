@@ -3,11 +3,12 @@ import { AlertTriangle, CheckCircle2, Clock, FastForward, KeyRound, RotateCcw, S
 import { ACTIVATION_ASSIGNMENTS, GOOD_SETTINGS, MESSY_ASSIGNMENTS, MESSY_GA_SETTINGS, ROLES, formatClock, person, type Method, type RoleId, type RoleSettings } from './model'
 import { activeUntil, advanceClock, applyDecisions, approve, auditScore, auditTenant, deactivate, deny, requestActivation, validateActivation, type Decision, type PimState } from './engine'
 import { Toggle } from '../../components/Sequence'
+import { Tabs } from '../../components/Tabs'
 import { useProgress } from '../progress/progress'
 import { celebrate } from '../../lib/confetti'
 
 const TIER_STYLE = { 0: 'border-leave/50 bg-leave/10 text-leave', 1: 'border-move/50 bg-move/10 text-move', 2: 'border-line text-muted' } as const
-const input = 'w-full rounded-lg border-2 border-line bg-paper px-2.5 py-1.5 text-sm focus:border-key'
+const input = 'w-full rounded-lg border-2 border-muted/70 bg-paper px-2.5 py-1.5 text-sm focus:border-key'
 const fresh = (): PimState => ({ now: 0, assignments: ACTIVATION_ASSIGNMENTS, settings: GOOD_SETTINGS, requests: [], log: [] })
 
 function TierChip({ role }: { role: RoleId }) {
@@ -25,6 +26,9 @@ function ActivateTab() {
   const [method, setMethod] = useState<Method>('authenticator')
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const { award } = useProgress()
+  // Approve, deny and deactivate remove the button that was pressed; focus goes to the heading of its card instead.
+  const inboxHeading = useRef<HTMLHeadingElement>(null)
+  const canDoHeading = useRef<HTMLHeadingElement>(null)
 
   const mine = state.assignments.filter((a) => a.principal === me && a.type === 'eligible')
   const set = state.settings[role]
@@ -46,13 +50,21 @@ function ActivateTab() {
     const r = fn()
     setState(r.state)
     setMessage(r.result.ok ? { ok: true, text: r.result.message } : { ok: false, text: r.result.errors.join(' ') })
+    return r.state
+  }
+
+  const decide = (id: string, fn: Parameters<typeof run>[0]) => {
+    const next = run(fn)
+    if (!next.requests.some((x) => x.id === id && x.status === 'pending')) inboxHeading.current?.focus()
   }
 
   return (
     <div className="mt-4 grid gap-4">
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-paper p-3">
-        <span className="flex items-center gap-1.5 font-display text-lg font-bold">
-          <Clock size={18} /> {formatClock(state.now)}
+        <span className="flex items-center gap-1.5 font-display text-lg font-bold" aria-live="polite">
+          <Clock size={18} />
+          <span className="sr-only">Time: </span>
+          {formatClock(state.now)}
         </span>
         <button className="btn py-1 text-sm" onClick={() => {
             setState((s) => advanceClock(s, 60))
@@ -116,7 +128,7 @@ function ActivateTab() {
           </div>
 
           <div className="rounded-2xl border border-line bg-paper p-4">
-            <h4 className="text-base font-semibold">Activate {ROLES[role].name}</h4>
+            <h3 className="text-base font-semibold">Activate {ROLES[role].name}</h3>
             <p className="mt-1 text-xs text-muted">
               Role settings: max {set.maxHours} h, {set.mfa === 'phishing-resistant' ? 'phishing-resistant MFA' : 'MFA'}
               {set.requireJustification && ', justification'}
@@ -128,7 +140,15 @@ function ActivateTab() {
                 <span className="font-semibold">
                   Duration: {hours} h <span className="font-normal text-muted">(max {set.maxHours} h)</span>
                 </span>
-                <input type="range" min={1} max={8} value={hours} onChange={(e) => setHours(Number(e.target.value))} className="mt-1 w-full accent-[rgb(var(--key))]" />
+                <input
+                  type="range"
+                  min={1}
+                  max={8}
+                  value={hours}
+                  aria-valuetext={`${hours} hours`}
+                  onChange={(e) => setHours(Number(e.target.value))}
+                  className="mt-1 w-full accent-[rgb(var(--key))]"
+                />
               </label>
               <label className="block text-sm">
                 <span className="font-semibold">Justification</span>
@@ -147,15 +167,21 @@ function ActivateTab() {
               </label>
             </div>
             {errors.length > 0 && (
-              <ul className="mt-3 space-y-1">
+              <ul className="mt-3 space-y-1" id="pim-activate-errors">
                 {errors.map((e) => (
                   <li key={e} className="flex gap-1.5 text-sm text-leave">
-                    <XCircle size={16} className="mt-0.5 shrink-0" /> {e}
+                    <XCircle size={16} className="mt-0.5 shrink-0" aria-hidden /> {e}
                   </li>
                 ))}
               </ul>
             )}
-            <button className="btn btn-key mt-3" disabled={errors.length > 0} onClick={() => run(() => requestActivation(state, { principal: me, role, hours, justification, ticket, method }))}>
+            {/* aria-disabled keeps focus here after activating, when the role can't be activated again */}
+            <button
+              className="btn btn-key mt-3"
+              aria-disabled={errors.length > 0}
+              aria-describedby={errors.length > 0 ? 'pim-activate-errors' : undefined}
+              onClick={() => errors.length === 0 && run(() => requestActivation(state, { principal: me, role, hours, justification, ticket, method }))}
+            >
               <KeyRound size={16} /> Activate
             </button>
             {message && <p className={`mt-2 text-sm font-semibold ${message.ok ? 'text-join' : 'text-leave'}`} role="status">{message.text}</p>}
@@ -164,9 +190,9 @@ function ActivateTab() {
 
         <div className="grid content-start gap-4">
           <div className="rounded-2xl border border-line bg-paper p-4">
-            <h4 className="flex items-center gap-2 text-base font-semibold">
+            <h3 className="flex items-center gap-2 text-base font-semibold" tabIndex={-1} ref={inboxHeading}>
               <UserCheck size={17} /> Approvals inbox
-            </h4>
+            </h3>
             {pending.length === 0 ? (
               <p className="mt-1 text-sm text-muted">No pending requests.</p>
             ) : (
@@ -180,13 +206,13 @@ function ActivateTab() {
                       “{r.justification}” {r.ticket && `(${r.ticket})`}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      <button className="btn border-join py-1 text-sm" onClick={() => run(() => approve(state, r.id, 'marte'))}>
+                      <button className="btn border-join py-1 text-sm" onClick={() => decide(r.id, () => approve(state, r.id, 'marte'))}>
                         Approve as Marte
                       </button>
-                      <button className="btn border-leave py-1 text-sm" onClick={() => run(() => deny(state, r.id, 'marte', 'No approved change for this'))}>
+                      <button className="btn border-leave py-1 text-sm" onClick={() => decide(r.id, () => deny(state, r.id, 'marte', 'No approved change for this'))}>
                         Deny as Marte
                       </button>
-                      <button className="btn btn-ghost py-1 text-sm" onClick={() => run(() => approve(state, r.id, r.principal))}>
+                      <button className="btn btn-ghost py-1 text-sm" onClick={() => decide(r.id, () => approve(state, r.id, r.principal))}>
                         Approve it yourself
                       </button>
                     </div>
@@ -197,20 +223,28 @@ function ActivateTab() {
           </div>
 
           <div className="rounded-2xl border border-line bg-paper p-4">
-            <h4 className="text-base font-semibold">What {person(me).name} can do right now</h4>
+            <h3 className="text-base font-semibold" tabIndex={-1} ref={canDoHeading}>
+              What {person(me).name} can do right now
+            </h3>
             <ul className="mt-2 space-y-1.5 text-sm">
               {mine.map((a) => {
                 const until = activeUntil(state, me, a.role)
                 return (
                   <li key={a.id} className={`flex gap-2 ${until !== null ? '' : 'text-muted'}`}>
-                    {until !== null ? <ShieldCheck size={16} className="mt-0.5 shrink-0 text-join" /> : <XCircle size={16} className="mt-0.5 shrink-0" />}
+                    {until !== null ? <ShieldCheck size={16} className="mt-0.5 shrink-0 text-join" aria-hidden /> : <XCircle size={16} className="mt-0.5 shrink-0" aria-hidden />}
                     <span>
                       <strong>{ROLES[a.role].name}:</strong>{' '}
                       {until !== null ? (
                         <>
                           {ROLES[a.role].can}
                           {state.requests.find((r) => r.principal === me && r.role === a.role && r.status === 'active') && (
-                            <button className="ml-2 text-key underline" onClick={() => setState((s) => deactivate(s, s.requests.find((r) => r.principal === me && r.role === a.role && r.status === 'active')!.id))}>
+                            <button
+                              className="ml-2 text-key underline"
+                              onClick={() => {
+                                setState((s) => deactivate(s, s.requests.find((r) => r.principal === me && r.role === a.role && r.status === 'active')!.id))
+                                canDoHeading.current?.focus()
+                              }}
+                            >
                               Deactivate
                             </button>
                           )}
@@ -226,7 +260,7 @@ function ActivateTab() {
           </div>
 
           <div className="rounded-2xl border border-line bg-paper p-4">
-            <h4 className="text-base font-semibold">Audit log</h4>
+            <h3 className="text-base font-semibold">Audit log</h3>
             {state.log.length === 0 ? (
               <p className="mt-1 text-sm text-muted">Every request, approval, activation and expiry is recorded here.</p>
             ) : (
@@ -274,7 +308,7 @@ function CleanupTab() {
   return (
     <div className="mt-4 grid gap-4">
       <div className="rounded-2xl border border-line bg-paper p-4">
-        <h4 className="text-base font-semibold">Fjordtech’s privileged role assignments today</h4>
+        <h3 className="text-base font-semibold">Fjordtech’s privileged role assignments today</h3>
         <p className="text-sm text-muted">Everything is permanent and active. Decide what each assignment should become.</p>
         <ul className="mt-3 grid gap-2">
           {MESSY_ASSIGNMENTS.map((a) => {
@@ -304,7 +338,7 @@ function CleanupTab() {
                       key={v}
                       onClick={() => setDecisions((m) => ({ ...m, [a.id]: v }))}
                       aria-pressed={d === v}
-                      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 font-semibold ${d === v ? (v === 'remove' ? 'bg-leave text-white' : v === 'eligible' ? 'bg-join text-white' : 'bg-ink text-paper') : 'text-muted'}`}
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 font-semibold ${d === v ? (v === 'remove' ? 'bg-leave text-on' : v === 'eligible' ? 'bg-join text-on' : 'bg-ink text-paper') : 'text-muted'}`}
                     >
                       {v === 'remove' && <Trash2 size={12} />}
                       {label}
@@ -319,7 +353,7 @@ function CleanupTab() {
       </div>
 
       <div className="rounded-2xl border border-line bg-paper p-4">
-        <h4 className="text-base font-semibold">Global Administrator role settings</h4>
+        <h3 className="text-base font-semibold">Global Administrator role settings</h3>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="font-semibold">Maximum activation duration</span>
@@ -363,15 +397,15 @@ function CleanupTab() {
 
       <div className={`rounded-2xl border-2 p-4 ${findings.length === 0 ? 'border-join bg-join/[.06]' : highs ? 'border-leave/50 bg-leave/[.04]' : 'border-move/50 bg-move/[.04]'}`} aria-live="polite">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-base font-semibold">
+          <h3 className="text-base font-semibold">
             {findings.length === 0 ? 'Zero standing privilege, except break-glass. Well done.' : `Findings: ${highs} high, ${findings.length - highs} medium`}
-          </h4>
+          </h3>
           <span className="font-display text-2xl font-bold tabular-nums">{score}/100</span>
         </div>
         <ul className="mt-2 space-y-1.5">
           {findings.map((f, i) => (
             <li key={i} className="flex gap-2 text-sm">
-              <AlertTriangle size={16} className={`mt-0.5 shrink-0 ${f.severity === 'high' ? 'text-leave' : 'text-move'}`} aria-label={f.severity} />
+              <AlertTriangle size={16} className={`mt-0.5 shrink-0 ${f.severity === 'high' ? 'text-leave' : 'text-move'}`} role="img" aria-label={`${f.severity}:`} />
               {f.text}
             </li>
           ))}
@@ -390,25 +424,17 @@ export function PimLab() {
   const [tab, setTab] = useState<'activate' | 'cleanup'>('activate')
   return (
     <section className="my-8 rounded-[1.75rem] border-2 border-ink bg-fog p-3 sm:p-5" aria-label="PIM lab">
-      <div className="flex flex-wrap gap-2" role="tablist">
-        {(
-          [
-            ['activate', 'Activate a role'],
-            ['cleanup', 'Clean up standing access'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`chip py-1.5 font-display text-sm font-semibold ${tab === id ? 'border-ink bg-ink text-paper' : 'border-line bg-paper'}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      {tab === 'activate' ? <ActivateTab /> : <CleanupTab />}
+      <Tabs
+        label="PIM lab"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          ['activate', 'Activate a role'],
+          ['cleanup', 'Clean up standing access'],
+        ]}
+      >
+        {tab === 'activate' ? <ActivateTab /> : <CleanupTab />}
+      </Tabs>
     </section>
   )
 }

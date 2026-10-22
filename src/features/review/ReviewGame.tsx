@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, Play, RotateCcw, Timer, X } from 'lucide-react'
 import { useProgress } from '../progress/progress'
 import { celebrate } from '../../lib/confetti'
@@ -34,17 +34,27 @@ export function ReviewGame() {
   const [state, setState] = useState<'idle' | 'playing' | 'done'>('idle')
   const [decisions, setDecisions] = useState<Record<number, 'keep' | 'revoke'>>({})
   const [left, setLeft] = useState(SECONDS)
+  // WCAG 2.2.1: a time limit must be possible to turn off.
+  const [timed, setTimed] = useState(true)
   const { award, addXp } = useProgress()
+  const firstDecision = useRef<HTMLButtonElement>(null)
+  const resultBox = useRef<HTMLDivElement>(null)
+
+  // Move focus into the round when it starts (the Start button is replaced by the timer) and to the result when it ends.
+  useEffect(() => {
+    if (state === 'playing') firstDecision.current?.focus()
+    if (state === 'done') resultBox.current?.focus()
+  }, [state])
 
   useEffect(() => {
-    if (state !== 'playing') return
+    if (state !== 'playing' || !timed) return
     if (left <= 0) {
       setState('done')
       return
     }
     const t = setTimeout(() => setLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
-  }, [state, left])
+  }, [state, left, timed])
 
   const decided = Object.keys(decisions).length
   useEffect(() => {
@@ -74,23 +84,32 @@ export function ReviewGame() {
     <section className="my-8 rounded-[1.75rem] border-2 border-ink bg-fog p-3 sm:p-5" aria-label="Access review game">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h4 className="text-lg font-semibold">Q3 access review: Fjordtech</h4>
+          <h3 className="text-lg font-semibold">Q3 access review: Fjordtech</h3>
           <p className="text-sm text-muted">You are the reviewer. Keep or revoke each line.</p>
         </div>
         {state === 'playing' ? (
-          <span className={`chip py-1 font-display text-base font-bold tabular-nums ${left <= 10 ? 'border-leave text-leave' : 'border-ink'}`} aria-live="off">
-            <Timer size={16} /> {left}s
+          <span className={`chip py-1 font-display text-base font-bold tabular-nums ${timed && left <= 10 ? 'border-leave text-leave' : 'border-ink'}`}>
+            <Timer size={16} /> {timed ? `${left}s` : 'No time limit'}
           </span>
         ) : (
-          <button className="btn btn-key" onClick={start}>
-            {state === 'idle' ? <Play size={16} /> : <RotateCcw size={16} />}
-            {state === 'idle' ? 'Start review' : 'Review again'}
-          </button>
+          <span className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4 accent-[rgb(var(--key))]" checked={!timed} onChange={(e) => setTimed(!e.target.checked)} />
+              No time limit
+            </label>
+            <button className="btn btn-key" onClick={start}>
+              {state === 'idle' ? <Play size={16} /> : <RotateCcw size={16} />}
+              {state === 'idle' ? 'Start review' : 'Review again'}
+            </button>
+          </span>
         )}
       </div>
+      <p className="sr-only" aria-live="assertive">
+        {state === 'playing' && timed && (left === 30 || left === 10) ? `${left} seconds left` : ''}
+      </p>
 
       {state === 'done' && (
-        <div className="mt-4 rounded-2xl border-2 border-ink bg-paper p-4" role="status">
+        <div className="mt-4 rounded-2xl border-2 border-ink bg-paper p-4" role="status" tabIndex={-1} ref={resultBox}>
           <p className="font-display text-2xl font-bold">
             Caught {caught} of {totalRisky} risky lines
           </p>
@@ -107,6 +126,7 @@ export function ReviewGame() {
             const d = decisions[i]
             const reveal = state === 'done'
             const right = reveal && d !== undefined && (d === 'revoke') === l.risky
+            const nameId = `review-line-${i}`
             return (
               <li
                 key={i}
@@ -116,18 +136,21 @@ export function ReviewGame() {
               >
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p>
+                    <p id={nameId}>
                       <strong>{l.who}</strong> <span className="text-muted">({l.job})</span>
                     </p>
-                    <p className="font-semibold">{l.access}</p>
+                    <p id={`${nameId}-access`} className="font-semibold">
+                      {l.access}
+                    </p>
                     <p className="text-sm text-muted">{l.context}</p>
                   </div>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5" role="group" aria-labelledby={`${nameId} ${nameId}-access`}>
                     <button
+                      ref={i === 0 ? firstDecision : undefined}
                       disabled={state !== 'playing'}
                       onClick={() => setDecisions((m) => ({ ...m, [i]: 'keep' }))}
                       aria-pressed={d === 'keep'}
-                      className={`inline-flex items-center gap-1 rounded-lg border-2 px-3 py-1.5 text-sm font-semibold ${d === 'keep' ? 'border-join bg-join text-white' : 'border-line'}`}
+                      className={`inline-flex items-center gap-1 rounded-lg border-2 px-3 py-1.5 text-sm font-semibold ${d === 'keep' ? 'border-join bg-join text-on' : 'border-line'}`}
                     >
                       <Check size={15} /> Keep
                     </button>
@@ -135,7 +158,7 @@ export function ReviewGame() {
                       disabled={state !== 'playing'}
                       onClick={() => setDecisions((m) => ({ ...m, [i]: 'revoke' }))}
                       aria-pressed={d === 'revoke'}
-                      className={`inline-flex items-center gap-1 rounded-lg border-2 px-3 py-1.5 text-sm font-semibold ${d === 'revoke' ? 'border-leave bg-leave text-white' : 'border-line'}`}
+                      className={`inline-flex items-center gap-1 rounded-lg border-2 px-3 py-1.5 text-sm font-semibold ${d === 'revoke' ? 'border-leave bg-leave text-on' : 'border-line'}`}
                     >
                       <X size={15} /> Revoke
                     </button>
@@ -143,6 +166,7 @@ export function ReviewGame() {
                 </div>
                 {reveal && (
                   <p className={`mt-2 text-sm ${l.risky ? 'text-leave' : 'text-join'}`}>
+                    <strong className="text-ink">{d === undefined ? 'Undecided. ' : right ? 'Your call was right. ' : 'Your call was wrong. '}</strong>
                     {l.risky ? 'Should be revoked. ' : 'Legitimate. '}
                     <span className="text-ink">{l.why}</span>
                   </p>

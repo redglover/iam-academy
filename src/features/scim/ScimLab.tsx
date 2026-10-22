@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { ChevronDown, Play, RotateCcw, Send, UserPlus } from 'lucide-react'
 import { BASE_URL, ENTERPRISE_SCHEMA, GROUP_SCHEMA, PATCH_SCHEMA, ScimServer, USER_SCHEMA, type Json, type ScimRequest, type ScimResponse } from './server'
 import { INITIAL_SOURCE, NEW_HIRE, emptyState, runCycle, type Action, type CycleResult, type SourceUser } from './provisioning'
 import { CodeBlock } from '../../components/CodeBlock'
+import { Tabs } from '../../components/Tabs'
 import { useProgress } from '../progress/progress'
 
 const ACTION_STYLE: Record<Action, string> = {
@@ -12,7 +13,7 @@ const ACTION_STYLE: Record<Action, string> = {
   Disable: 'border-leave/50 bg-leave/10 text-leave',
   'No change': 'border-line text-muted',
   'Skipped (out of scope)': 'border-line text-muted',
-  Failed: 'border-leave bg-leave text-white',
+  Failed: 'border-leave bg-leave text-on',
 }
 
 const safeDecode = (s: string) => {
@@ -40,41 +41,39 @@ export function ScimLab() {
 
   return (
     <section className="my-8 rounded-[1.75rem] border-2 border-ink bg-fog p-3 sm:p-5" aria-label="SCIM lab">
-      <div className="flex flex-wrap items-center gap-2" role="tablist">
-        {(
-          [
-            ['cycle', 'Provisioning cycle'],
-            ['console', 'SCIM console'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`chip py-1.5 font-display text-sm font-semibold ${tab === id ? 'border-ink bg-ink text-paper' : 'border-line bg-paper'}`}
-          >
-            {label}
-          </button>
-        ))}
-        <span className="ml-auto text-sm text-muted">
-          Both tabs talk to the same SCIM server, running in your browser: <code className="text-xs">{BASE_URL}</code>
-        </span>
-      </div>
-      {tab === 'cycle' ? <CycleTab server={server.current} onChange={refresh} /> : <ConsoleTab server={server.current} onChange={refresh} />}
+      <Tabs
+        label="SCIM lab"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          ['cycle', 'Provisioning cycle'],
+          ['console', 'SCIM console'],
+        ]}
+        extra={
+          <span className="ml-auto text-sm text-muted">
+            Both tabs talk to the same SCIM server, running in your browser: <code className="text-xs">{BASE_URL}</code>
+          </span>
+        }
+      >
+        {tab === 'cycle' ? <CycleTab server={server.current} onChange={refresh} /> : <ConsoleTab server={server.current} onChange={refresh} />}
+      </Tabs>
     </section>
   )
 }
 
 function AppUsers({ server }: { server: ScimServer }) {
   const users = [...server.users.values()]
+  const id = useId()
   return (
     <div className="min-w-0 rounded-2xl border border-line bg-paper p-4">
-      <h4 className="text-base font-semibold">Salesforce users (the SCIM app)</h4>
+      <h3 id={id} className="text-base font-semibold">
+        Salesforce users (the SCIM app)
+      </h3>
       {users.length === 0 ? (
         <p className="mt-2 text-sm text-muted">No users yet. Run a provisioning cycle or POST one in the console.</p>
       ) : (
-        <div className="mt-2 overflow-x-auto">
+        // Focusable so the table can be scrolled sideways from the keyboard on narrow screens.
+        <div className="mt-2 overflow-x-auto" tabIndex={0} role="group" aria-labelledby={id}>
           <table className="w-full min-w-[420px] text-left text-sm">
             <thead>
               <tr className="border-b border-line text-muted">
@@ -107,6 +106,7 @@ function CycleTab({ server, onChange }: { server: ScimServer; onChange: () => vo
   const [result, setResult] = useState<CycleResult | null>(null)
   const [tokenExpired, setTokenExpired] = useState(false)
   const [open, setOpen] = useState<number | null>(null)
+  const [said, setSaid] = useState('')
   const seen = useRef(new Set<Action>())
   const { award } = useProgress()
 
@@ -131,6 +131,7 @@ function CycleTab({ server, onChange }: { server: ScimServer; onChange: () => vo
     setState(emptyState())
     setResult(null)
     setTokenExpired(false)
+    setSaid('')
     onChange()
   }
 
@@ -138,7 +139,7 @@ function CycleTab({ server, onChange }: { server: ScimServer; onChange: () => vo
     <div className="mt-4 grid gap-4">
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="min-w-0 rounded-2xl border border-line bg-paper p-4">
-          <h4 className="text-base font-semibold">Entra ID: users assigned to the Salesforce app</h4>
+          <h3 className="text-base font-semibold">Entra ID: users assigned to the Salesforce app</h3>
           <p className="text-sm text-muted">Change things here, then run a cycle. Scope: “Sync only assigned users and groups”.</p>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full min-w-[440px] text-left text-sm">
@@ -164,7 +165,7 @@ function CycleTab({ server, onChange }: { server: ScimServer; onChange: () => vo
                         value={u.department}
                         onChange={(e) => edit(u.key, { department: e.target.value })}
                         aria-label={`Department for ${u.givenName}`}
-                        className="rounded-md border border-line bg-paper px-1.5 py-1"
+                        className="rounded-md border-2 border-muted/70 bg-paper px-1.5 py-1"
                       >
                         {['Sales', 'Finance', 'Engineering', 'People'].map((d) => (
                           <option key={d}>{d}</option>
@@ -182,17 +183,33 @@ function CycleTab({ server, onChange }: { server: ScimServer; onChange: () => vo
               </tbody>
             </table>
           </div>
+          {/* One-shot buttons use aria-disabled so they keep keyboard focus after being pressed. */}
           <div className="mt-3 flex flex-wrap gap-2">
-            <button className="btn py-1 text-sm" disabled={source.some((u) => u.key === 'ola')} onClick={() => setSource((s) => [...s, { ...NEW_HIRE }])}>
+            <button
+              className="btn py-1 text-sm"
+              aria-disabled={source.some((u) => u.key === 'ola')}
+              onClick={() => {
+                if (source.some((u) => u.key === 'ola')) return
+                setSource((s) => [...s, { ...NEW_HIRE }])
+                setSaid(`${NEW_HIRE.givenName} ${NEW_HIRE.surname} added to the table.`)
+              }}
+            >
               <UserPlus size={15} /> Hire Ola (joiner)
             </button>
             <button
               className="btn py-1 text-sm"
-              disabled={kari.surname === 'Strand'}
-              onClick={() => edit('kari', { surname: 'Strand', upn: 'kari.strand@fjordtech.no', mail: 'kari.strand@fjordtech.no' })}
+              aria-disabled={kari.surname === 'Strand'}
+              onClick={() => {
+                if (kari.surname === 'Strand') return
+                edit('kari', { surname: 'Strand', upn: 'kari.strand@fjordtech.no', mail: 'kari.strand@fjordtech.no' })
+                setSaid('Kari is now Kari Strand, kari.strand@fjordtech.no.')
+              }}
             >
               Kari changes surname
             </button>
+            <span className="sr-only" aria-live="polite">
+              {said}
+            </span>
           </div>
           <label className="mt-3 flex items-center gap-2 text-sm">
             <input type="checkbox" className="h-4 w-4 accent-[rgb(var(--leave))]" checked={tokenExpired} onChange={(e) => setTokenExpired(e.target.checked)} />
@@ -216,18 +233,18 @@ function CycleTab({ server, onChange }: { server: ScimServer; onChange: () => vo
 
       {result && (
         <div className="rounded-2xl border border-line bg-paper p-4" aria-live="polite">
-          <h4 className="text-base font-semibold">Provisioning log: {result.kind.toLowerCase()} cycle</h4>
+          <h3 className="text-base font-semibold">Provisioning log: {result.kind.toLowerCase()} cycle</h3>
           {result.entries.length === 0 && <p className="mt-2 text-sm text-muted">Nothing changed in Entra since the last cycle, so nothing was sent. That’s what incremental cycles are for.</p>}
           <ul className="mt-2 grid gap-2">
             {result.entries.map((e, i) => (
               <li key={i} className="rounded-xl border border-line">
-                <button className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+                <button className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left" onClick={() => setOpen(open === i ? null : i)} aria-expanded={e.exchanges.length ? open === i : undefined}>
                   <span className={`chip text-xs font-bold ${ACTION_STYLE[e.action]}`}>{e.action}</span>
                   <span className="font-semibold">{e.user}</span>
                   <span className="min-w-0 flex-1 text-sm text-muted">{e.reason}</span>
                   {e.exchanges.length > 0 && (
                     <span className="flex items-center gap-1 text-sm text-key">
-                      {e.exchanges.length} request{e.exchanges.length > 1 ? 's' : ''} <ChevronDown size={15} className={open === i ? 'rotate-180' : ''} />
+                      {e.exchanges.length} request{e.exchanges.length > 1 ? 's' : ''} <ChevronDown size={15} className={open === i ? 'rotate-180' : ''} aria-hidden />
                     </span>
                   )}
                 </button>
@@ -341,12 +358,12 @@ function ConsoleTab({ server, onChange }: { server: ScimServer; onChange: () => 
           ))}
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <select value={method} onChange={(e) => setMethod(e.target.value as ScimRequest['method'])} aria-label="HTTP method" className="rounded-lg border-2 border-line bg-paper px-2 py-1.5 font-mono text-sm font-bold">
+          <select value={method} onChange={(e) => setMethod(e.target.value as ScimRequest['method'])} aria-label="HTTP method" className="rounded-lg border-2 border-muted/70 bg-paper px-2 py-1.5 font-mono text-sm font-bold">
             {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((m) => (
               <option key={m}>{m}</option>
             ))}
           </select>
-          <label className="flex min-w-0 flex-1 items-center rounded-lg border-2 border-line bg-paper focus-within:border-key">
+          <label className="flex min-w-0 flex-1 items-center rounded-lg border-2 border-muted/70 bg-paper focus-within:border-key">
             <span className="hidden pl-2 font-mono text-xs text-muted sm:inline">/scim/v2</span>
             <span className="sr-only">Path</span>
             <input value={path} onChange={(e) => setPath(e.target.value)} spellCheck={false} className="min-w-0 flex-1 bg-transparent px-2 py-1.5 font-mono text-sm outline-none" />
@@ -358,10 +375,14 @@ function ConsoleTab({ server, onChange }: { server: ScimServer; onChange: () => 
         {method !== 'GET' && method !== 'DELETE' && (
           <label className="mt-3 block">
             <span className="text-sm font-semibold">Body (application/scim+json)</span>
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full rounded-xl border-2 border-line bg-paper p-3 font-mono text-xs focus:border-key" />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} spellCheck={false} className="mt-1 w-full rounded-xl border-2 border-muted/70 bg-paper p-3 font-mono text-xs focus:border-key" />
           </label>
         )}
-        {bodyError && <p className="mt-2 text-sm text-leave">{bodyError}</p>}
+        {bodyError && (
+          <p className="mt-2 text-sm text-leave" role="alert">
+            {bodyError}
+          </p>
+        )}
       </div>
 
       {latest && (
