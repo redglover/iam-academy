@@ -8,7 +8,7 @@ import { NotFound } from '../pages/NotFound'
 
 const render = (path: string) =>
   renderToString(
-    <ProgressProvider totalModules={MODULES.length}>
+    <ProgressProvider>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/" element={<p>home</p>} />
