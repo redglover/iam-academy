@@ -12,7 +12,7 @@ export function NotFound({ slug }: { slug?: string }) {
       <p className="mt-4 max-w-[60ch] text-xl text-muted">
         {slug ? (
           <>
-            There is no module called <code className="font-mono text-ink">{slug}</code>. It may have been renamed, or the link has a typo.
+            There is no module called <code className="break-all font-mono text-ink">{slug}</code>. It may have been renamed, or the link has a typo.
           </>
         ) : (
           <>
