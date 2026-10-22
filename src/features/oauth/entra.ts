@@ -56,16 +56,105 @@ export async function redeemCode(o: { tenant: string; clientId: string; redirect
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
   })
-  const json = await res.json()
+  const json = await readJson(res, 'the token endpoint')
   if (!res.ok) throw json as OAuthError
   return json as TokenResponse
 }
 
 export async function getMe(accessToken: string): Promise<Record<string, unknown>> {
   const res = await fetch('https://graph.microsoft.com/v1.0/me', { headers: { Authorization: `Bearer ${accessToken}` } })
-  const json = await res.json()
+  const json = await readJson(res, 'Microsoft Graph')
   if (!res.ok) throw json
-  return json
+  return json as Record<string, unknown>
+}
+
+/** Parses a JSON body, or throws a readable OAuthError when something else (a proxy page, a captive portal) answered. */
+async function readJson(res: Response, from: string): Promise<unknown> {
+  const type = res.headers.get('content-type') ?? ''
+  if (!/[/+]json\b/i.test(type)) {
+    throw {
+      error: 'unexpected_response',
+      error_description: `Expected JSON from ${from} but got ${type || 'no content type'} (HTTP ${res.status}). A proxy, firewall or captive portal may be answering instead of Microsoft.`,
+    } satisfies OAuthError
+  }
+  return res.json()
+}
+
+export const MSA_TENANT_ID = '9188040d-6c67-4c5b-b112-36a304b66dad'
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/** Allowed clock skew when checking exp/nbf, in seconds. */
+const SKEW = 300
+
+export interface IdTokenCheck {
+  claim: string
+  ok: boolean
+  detail: string
+}
+
+/**
+ * The checks an app runs on an ID token against the request it sent (signature aside, which needs the tenant's keys).
+ * `now` is in seconds since the epoch.
+ */
+export function validateIdToken(
+  payload: Record<string, unknown>,
+  expected: { nonce: string; clientId: string; tenant: string },
+  now = Math.floor(Date.now() / 1000),
+): IdTokenCheck[] {
+  const { nonce, iss, aud, exp, nbf, tid } = payload
+  const tenant = expected.tenant.trim().toLowerCase() || 'organizations'
+  const time = (s: unknown) => (typeof s === 'number' ? new Date(s * 1000).toISOString() : String(s))
+
+  let tidOk: boolean
+  let tidDetail: string
+  if (typeof tid !== 'string') {
+    tidOk = false
+    tidDetail = 'tid is missing.'
+  } else if (GUID.test(tenant)) {
+    tidOk = tid.toLowerCase() === tenant
+    tidDetail = tidOk ? 'tid is the tenant you configured.' : `tid ${tid} is not the tenant you configured (${tenant}).`
+  } else if (tenant === 'organizations') {
+    tidOk = tid.toLowerCase() !== MSA_TENANT_ID
+    tidDetail = tidOk ? 'tid is a work or school tenant, as “organizations” allows.' : 'tid is the personal-account tenant, which “organizations” should not allow.'
+  } else if (tenant === 'consumers') {
+    tidOk = tid.toLowerCase() === MSA_TENANT_ID
+    tidDetail = tidOk ? 'tid is the personal-account tenant, as “consumers” requires.' : 'tid is not the personal-account tenant that “consumers” requires.'
+  } else {
+    tidOk = true
+    tidDetail = `“${tenant}” accepts any tenant, so an app would check tid against its own list of allowed tenants.`
+  }
+
+  const expectedIss = typeof tid === 'string' ? `https://login.microsoftonline.com/${tid}/v2.0` : undefined
+  const audOk = Array.isArray(aud) ? aud.includes(expected.clientId) : aud === expected.clientId
+  const expOk = typeof exp === 'number' && now < exp + SKEW
+  const nbfOk = nbf === undefined || (typeof nbf === 'number' && now >= nbf - SKEW)
+
+  return [
+    {
+      claim: 'nonce',
+      ok: nonce === expected.nonce,
+      detail: nonce === expected.nonce ? 'Matches the nonce this browser sent, so the token was issued for this sign-in.' : 'Does not match the nonce this browser sent. The token may be replayed.',
+    },
+    {
+      claim: 'iss',
+      ok: iss !== undefined && iss === expectedIss,
+      detail: iss === expectedIss ? `Is ${expectedIss}: issued by Entra ID for the tenant in tid.` : `Expected ${expectedIss ?? 'an issuer built from tid'}, got ${String(iss)}.`,
+    },
+    {
+      claim: 'aud',
+      ok: audOk,
+      detail: audOk ? 'Is your client ID: the token was issued to this app.' : `Expected your client ID ${expected.clientId}, got ${String(aud)}.`,
+    },
+    {
+      claim: 'exp / nbf',
+      ok: expOk && nbfOk,
+      detail: !expOk
+        ? `Expired at ${time(exp)}.`
+        : !nbfOk
+          ? `Not valid before ${time(nbf)}.`
+          : `Valid now: ${typeof nbf === 'number' ? `from ${time(nbf)} ` : ''}until ${time(exp)}, allowing ${SKEW / 60} minutes of clock skew.`,
+    },
+    { claim: 'tid', ok: tidOk, detail: tidDetail },
+  ]
 }
 
 /** Friendly fixes for the errors people hit most when setting this up. */
