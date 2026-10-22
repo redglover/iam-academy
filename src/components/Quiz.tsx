@@ -5,12 +5,24 @@ import type { Question } from '../data/types'
 import { useProgress } from '../features/progress/progress'
 import { celebrate } from '../lib/confetti'
 
+// Fisher-Yates shuffle of option indices, so the correct answer is not always in the same slot.
+export function shuffledOrder(length: number): number[] {
+  const order = Array.from({ length }, (_, n) => n)
+  for (let n = length - 1; n > 0; n--) {
+    const k = Math.floor(Math.random() * (n + 1))
+    ;[order[n], order[k]] = [order[k], order[n]]
+  }
+  return order
+}
+
 export function Quiz({ slug, questions, onDone }: { slug: string; questions: Question[]; onDone: () => void }) {
   const { recordQuiz } = useProgress()
   const [i, setI] = useState(0)
   const [picked, setPicked] = useState<number | null>(null)
   const [correct, setCorrect] = useState(0)
   const [finished, setFinished] = useState(false)
+  // order[slot] is the index into q.options shown in that slot; reshuffled every time a question is shown.
+  const [order, setOrder] = useState(() => shuffledOrder(questions[0]?.options.length ?? 0))
 
   // Where keyboard focus goes once the next render has mounted it. The question heading mounts late (AnimatePresence waits
   // for the exit animation), so focus is applied from ref callbacks rather than an effect.
@@ -24,17 +36,21 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
 
   const q = questions[i]
 
-  const choose = (n: number) => {
+  // picked and the slot comparisons below use display slots; the answer is remapped from content order.
+  const answerSlot = order.indexOf(q.answer)
+
+  const choose = (slot: number) => {
     if (picked !== null) return
     focusNext.current = 'feedback'
-    setPicked(n)
-    if (n === q.answer) setCorrect((c) => c + 1)
+    setPicked(slot)
+    if (slot === answerSlot) setCorrect((c) => c + 1)
   }
 
   const next = () => {
     if (i + 1 < questions.length) {
       focusNext.current = 'question'
       setI(i + 1)
+      setOrder(shuffledOrder(questions[i + 1].options.length))
       setPicked(null)
       return
     }
@@ -50,6 +66,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
   const restart = () => {
     focusNext.current = 'question'
     setI(0)
+    setOrder(shuffledOrder(questions[0].options.length))
     setPicked(null)
     setCorrect(0)
     setFinished(false)
@@ -89,15 +106,15 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
           </h3>
           {/* Plain buttons in a group: one click answers, so there is no radio-style selection to move with arrow keys. */}
           <div className="mt-4 grid gap-2" role="group" aria-labelledby={`${slug}-q`}>
-            {q.options.map((o, n) => {
-              const isAnswer = n === q.answer
+            {order.map((o, n) => {
+              const isAnswer = n === answerSlot
               const isPicked = n === picked
               const state =
                 picked === null ? 'border-line hover:border-key hover:bg-key/5' : isAnswer ? 'border-join bg-join/10' : isPicked ? 'border-leave bg-leave/10' : 'border-line opacity-60'
               return (
                 // aria-disabled rather than disabled after answering: the options stay focusable and readable, with their verdict.
                 <button
-                  key={n}
+                  key={o}
                   aria-disabled={picked !== null}
                   onClick={() => choose(n)}
                   className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-colors ${state} ${picked !== null ? 'cursor-default' : ''}`}
@@ -107,7 +124,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
                   </span>
                   <span>
                     <span className="sr-only">{String.fromCharCode(65 + n)}: </span>
-                    {o}
+                    {q.options[o]}
                     {picked !== null && (isAnswer || isPicked) && (
                       <span className="sr-only">{isAnswer && isPicked ? ' (your answer, correct)' : isAnswer ? ' (correct answer)' : ' (your answer, wrong)'}</span>
                     )}
@@ -127,7 +144,7 @@ export function Quiz({ slug, questions, onDone }: { slug: string; questions: Que
               ref={focusOnMount('feedback')}
             >
               <p id={`${slug}-verdict`} className="font-display font-semibold">
-                {picked === q.answer ? 'Correct.' : `Not quite. The answer is ${String.fromCharCode(65 + q.answer)}.`}
+                {picked === answerSlot ? 'Correct.' : `Not quite. The answer is ${String.fromCharCode(65 + answerSlot)}.`}
               </p>
               <p id={`${slug}-explain`} className="mt-1">
                 {q.explain}
