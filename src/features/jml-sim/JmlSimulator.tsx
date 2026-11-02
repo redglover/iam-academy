@@ -3,7 +3,7 @@ import { AlertTriangle, Bot, CheckCircle2, FastForward, Hand, RotateCcw, ShieldA
 import { DEPARTMENTS, PERSONAS, SYSTEMS, type Department } from './model'
 import { findings, formatElapsed, type Mode, type StepKind } from './engine'
 import { IdBadge } from './IdBadge'
-import { useJmlPlayer } from './useJmlPlayer'
+import { JML_SPEEDS, useJmlPlayer, type JmlSpeed } from './useJmlPlayer'
 import { useProgress } from '../progress/progress'
 
 const KIND_STYLE: Record<StepKind, string> = {
@@ -23,7 +23,8 @@ export function JmlSimulator() {
   const persona = PERSONAS.find((p) => p.key === personaKey)!
   const [mode, setMode] = useState<Mode>('manual')
   const [dept, setDept] = useState<Department>('Sales')
-  const { who, log, shown, playing, fire, skip, reset } = useJmlPlayer(persona)
+  const [speed, setSpeed] = useState<JmlSpeed>('normal')
+  const { who, log, shown, playing, fire, skip, reset } = useJmlPlayer(persona, JML_SPEEDS[speed])
   const { award, addXp } = useProgress()
   const logEnd = useRef<HTMLLIElement>(null)
   const resetBtn = useRef<HTMLButtonElement>(null)
@@ -90,6 +91,21 @@ export function JmlSimulator() {
               >
                 {m === 'manual' ? <Hand size={15} /> : <Bot size={15} />}
                 {m === 'manual' ? 'Manual tickets' : 'Automated IAM'}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-semibold">Playback speed</legend>
+          <div className="inline-flex rounded-xl border-2 border-ink bg-paper p-0.5">
+            {(Object.keys(JML_SPEEDS) as JmlSpeed[]).map((sp) => (
+              <button
+                key={sp}
+                onClick={() => setSpeed(sp)}
+                aria-pressed={speed === sp}
+                className={`rounded-lg px-3 py-1.5 font-display text-sm font-semibold capitalize ${speed === sp ? 'bg-ink text-paper' : 'text-muted'}`}
+              >
+                {sp}
               </button>
             ))}
           </div>

@@ -62,8 +62,8 @@ export function Toggle({ on, onChange, label, hint }: { on: boolean; onChange: (
   )
 }
 
-/** Step index plus autoplay. Resets when `resetKey` changes. */
-export function useStepPlayer(count: number, resetKey: unknown) {
+/** Step index plus autoplay. Resets when `resetKey` changes. Autoplay holds each step long enough to read its note. */
+export function useStepPlayer(count: number, resetKey: unknown, stepMs = 4500) {
   const [i, setI] = useState(0)
   const [playing, setPlaying] = useState(false)
   const atEnd = i >= count - 1
@@ -79,9 +79,9 @@ export function useStepPlayer(count: number, resetKey: unknown) {
       setPlaying(false)
       return
     }
-    const t = setTimeout(() => setI((n) => n + 1), 1800)
+    const t = setTimeout(() => setI((n) => n + 1), stepMs)
     return () => clearTimeout(t)
-  }, [playing, i, atEnd])
+  }, [playing, i, atEnd, stepMs])
 
   return { i: Math.min(i, count - 1), setI, playing, setPlaying, atEnd }
 }
