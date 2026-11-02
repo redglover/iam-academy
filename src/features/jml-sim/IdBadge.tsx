@@ -92,7 +92,7 @@ export function IdBadge({ who, compact = false }: { who: Identity; compact?: boo
                         initial={{ opacity: 0, scale: 0.6 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.6 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                        transition={{ type: 'spring', stiffness: 160, damping: 22 }}
                         className={`chip text-xs ${
                           ent.risk === 'high' ? 'border-leave/50 bg-leave/10' : ent.risk === 'medium' ? 'border-move/50 bg-move/10' : 'border-line bg-fog'
                         } ${off ? 'line-through opacity-50' : ''}`}

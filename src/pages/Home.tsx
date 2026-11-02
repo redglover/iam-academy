@@ -9,7 +9,7 @@ import { BADGES, levelFor, useProgress, type BadgeId } from '../features/progres
 import { toneTint } from '../lib/tone'
 
 function HeroBadge() {
-  const { who, log, shown, playing, fire, reset } = useJmlPlayer(PERSONAS[0], 160)
+  const { who, log, shown, playing, fire, reset } = useJmlPlayer(PERSONAS[0], 1500)
   const current = log[log.length - 1]
   const step = current?.steps[Math.max(0, shown - 1)]
   return (

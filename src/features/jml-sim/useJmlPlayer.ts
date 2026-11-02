@@ -12,8 +12,11 @@ const NO_STEPS: Step[] = []
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
+export const JML_SPEEDS = { slow: 2200, normal: 1300, fast: 600 } as const
+export type JmlSpeed = keyof typeof JML_SPEEDS
+
 /** Plays a JML plan one step at a time so learners can follow along. */
-export function useJmlPlayer(persona: Persona, speedMs = 420) {
+export function useJmlPlayer(persona: Persona, speedMs: number = JML_SPEEDS.normal) {
   const [base, setBase] = useState<Identity>(() => emptyIdentity(persona))
   const [log, setLog] = useState<LogEntry[]>([])
   const [shown, setShown] = useState(0)
